@@ -1,0 +1,9 @@
+Plugin_PotatoVoiceHub/BouyomiChan.exe
+Plugin_PotatoVoiceHub/obj/
+PotatoVoiceHub/obj/
+Plugin_PotatoVoiceHub/bin/
+PotatoVoiceHub/bin/
+*.suo
+PotatoVoiceHub/.vs/
+.vs/
+*.user

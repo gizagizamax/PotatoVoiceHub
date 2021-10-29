@@ -1,0 +1,47 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        x:Class="PotatoVoiceHub.MainWindow"
+        mc:Ignorable="d"
+        Loaded="Window_Loaded"
+        Title="VoiceHub" Height="450" Width="400">
+    <StackPanel>
+
+        <StackPanel Margin="0,0,0,5">
+            <Label Content="AIVoiceEditor.exeの場所"/>
+            <DockPanel Margin="0,0,0,5">
+                <Button x:Name="button" Content="・・・" Click="btnAIVoiceEditorPath_Click" DockPanel.Dock="Right"/>
+                <TextBox x:Name="txtAIVoiceEditorPath" Text="" DockPanel.Dock="Left" TextChanged="txtAIVoiceEditorPath_TextChanged"/>
+            </DockPanel>
+            <StackPanel Margin="0,5,0,10">
+                <Label Content="受信HTTPポート(http://localhost:ポート?text=メッセージ)"/>
+                <TextBox x:Name="txtHttpPort" Text="" TextChanged="txtHttpPort_TextChanged"/>
+            </StackPanel>
+            <Button Content="A.I.VOICE 開始" Click="btnStartAIVoice_Click" HorizontalAlignment="Left" Width="100"/>
+        </StackPanel>
+        <Border Height="2" Background="#FF616161"/>
+        <StackPanel Margin="0,0,0,5">
+            <Label Content="テーマ"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="ダークモード" Click="btnDark_Click" HorizontalAlignment="Left" Width="100"/>
+                <Button Content="シンプルモード" Click="btnSimple_Click" HorizontalAlignment="Left" Width="100"/>
+            </StackPanel>
+        </StackPanel>
+        <Border Height="2" Background="#FF616161"/>
+        <StackPanel Margin="0,5,0,5">
+            <TextBox x:Name="txtSpeekText" Text="" Margin="0,0,0,5"/>
+            <Button Content="お試し再生" Click="btnPlay_Click" HorizontalAlignment="Left" Width="100"/>
+        </StackPanel>
+        <Border Height="2" Background="#FF616161"/>
+        <StackPanel Margin="0,0,0,5" Height="188">
+            <Label Content="ログ"/>
+            <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Auto" MinHeight="160" AcceptsReturn="True"/>
+        </StackPanel>
+
+    </StackPanel>
+
+
+
+</Window>

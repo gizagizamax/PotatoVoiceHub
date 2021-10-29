@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AI.Framework">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Framework.App">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Framework.App.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Framework.License">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Framework.License.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Framework.Wpf">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Framework.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Framework.Wpf.Controls">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Framework.Wpf.Controls.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Talk">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Talk.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Talk.Editor.Api">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Talk.Editor.Api.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Talk.Editor.Core">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Talk.Editor.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="AI.Talk.Tuning">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AI.Talk.Tuning.dll</HintPath>
+    </Reference>
+    <Reference Include="AIVoiceEditor">
+      <HintPath>..\..\..\..\..\..\Program Files\AI\AIVoice\AIVoiceEditor\AIVoiceEditor.exe</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+</Project>

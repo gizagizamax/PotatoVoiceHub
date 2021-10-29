@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31808.319
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PotatoVoiceHub", "PotatoVoiceHub\PotatoVoiceHub.csproj", "{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_PotatoVoiceHub", "Plugin_PotatoVoiceHub\Plugin_PotatoVoiceHub.csproj", "{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Plugin_PotatoVoiceHub", "Plugin_PotatoVoiceHub\Plugin_PotatoVoiceHub.csproj", "{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,8 +17,8 @@ Global
 		{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

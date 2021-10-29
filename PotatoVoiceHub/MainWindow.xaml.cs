@@ -36,8 +36,14 @@ namespace PotatoVoiceHub
             {
                 WriteLog("AIVoiceEditor.exeの場所参照");
 
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.InitialDirectory = txtAIVoiceEditorPath.Text;
+                var openFileDialog = new OpenFileDialog();
+                try
+                {
+                    openFileDialog.InitialDirectory = new FileInfo(txtAIVoiceEditorPath.Text).DirectoryName;
+                }
+                catch (Exception)
+                {
+                }
                 var dialogResult = openFileDialog.ShowDialog();
                 if (dialogResult != null && dialogResult.Value)
                 {
@@ -56,43 +62,58 @@ namespace PotatoVoiceHub
             {
                 WriteLog("A.I.VOICE 開始");
 
-                var aivoiceEditorPath = new FileInfo(txtAIVoiceEditorPath.Text);
-                Environment.SetEnvironmentVariable("path", Environment.GetEnvironmentVariable("path") + ";" + aivoiceEditorPath.DirectoryName);
-                var com = new Process();
-                com.StartInfo.FileName = System.Environment.GetEnvironmentVariable("ComSpec");
-                com.StartInfo.UseShellExecute = false;
-                com.StartInfo.RedirectStandardOutput = true;
-                com.StartInfo.RedirectStandardInput = false;
-                com.StartInfo.CreateNoWindow = true;
-                foreach (var arg in new string[] {
-                    String.Format(@"/c mklink ""{0}aitalk.lic"" ""{1}\aitalk.lic""", AppDomain.CurrentDomain.BaseDirectory, aivoiceEditorPath.DirectoryName),
-                    String.Format(@"/c mklink ""{0}aitalk5.lic"" ""{1}\aitalk5.lic""", AppDomain.CurrentDomain.BaseDirectory, aivoiceEditorPath.DirectoryName),
-                    String.Format(@"/c mklink /d ""{0}Voice"" ""{1}\Voice""", AppDomain.CurrentDomain.BaseDirectory, aivoiceEditorPath.DirectoryName),
-                    String.Format(@"/c mklink /d ""{0}Lang"" ""{1}\Lang""", AppDomain.CurrentDomain.BaseDirectory, aivoiceEditorPath.DirectoryName),
-                    String.Format(@"/c mklink /d ""{0}copying"" ""{1}\copying""", AppDomain.CurrentDomain.BaseDirectory, aivoiceEditorPath.DirectoryName)
-                })
-                {
-                    WriteLog(arg);
-                    com.StartInfo.Arguments = arg;
-                    com.Start();
-                    com.WaitForExit();
-                }
-                com.Close();
-
-                listener = new HttpListener();
-                listener.Prefixes.Add("http://+:" + txtHttpPort.Text + "/");
-                listener.Start();
-                startLoop(listener);
-
-                WriteLog("AI.Talk.Editor.App init");
-                var app = new AI.Talk.Editor.App();
-                app.InitializeComponent();
-                app.Run();
+                mklink();
+                initHttp();
+                startAivoice();
             }
             catch (Exception exc)
             {
                 WriteLog(exc.Message + "\n" + exc.StackTrace);
             }
+        }
+
+        private void mklink()
+        {
+            var com = new Process();
+            com.StartInfo.FileName = System.Environment.GetEnvironmentVariable("ComSpec");
+            com.StartInfo.UseShellExecute = false;
+            com.StartInfo.RedirectStandardOutput = true;
+            com.StartInfo.RedirectStandardInput = false;
+            com.StartInfo.CreateNoWindow = true;
+            var aivoiceEditorPath = new FileInfo(txtAIVoiceEditorPath.Text);
+            foreach (var aiFile in aivoiceEditorPath.Directory.EnumerateFiles())
+            {
+                var cmd = String.Format(@"/c mklink ""{0}{1}"" ""{2}""", AppDomain.CurrentDomain.BaseDirectory, aiFile.Name, aiFile.FullName);
+                WriteLog(cmd);
+                com.StartInfo.Arguments = cmd;
+                com.Start();
+                com.WaitForExit();
+            }
+            foreach (var aiDir in aivoiceEditorPath.Directory.EnumerateDirectories())
+            {
+                var cmd = String.Format(@"/c mklink /d ""{0}{1}"" ""{2}""", AppDomain.CurrentDomain.BaseDirectory, aiDir.Name, aiDir.FullName);
+                WriteLog(cmd);
+                com.StartInfo.Arguments = cmd;
+                com.Start();
+                com.WaitForExit();
+            }
+            com.Close();
+        }
+
+        private void initHttp()
+        {
+            listener = new HttpListener();
+            listener.Prefixes.Add("http://+:" + txtHttpPort.Text + "/");
+            listener.Start();
+            startLoop(listener);
+        }
+
+        private void startAivoice()
+        {
+            WriteLog("AI.Talk.Editor.App init");
+            var app = new AI.Talk.Editor.App();
+            app.InitializeComponent();
+            app.Run();
         }
 
         private void btnPlay_Click(object sender, RoutedEventArgs e)

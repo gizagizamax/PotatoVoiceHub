@@ -4,6 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFramework>net35</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

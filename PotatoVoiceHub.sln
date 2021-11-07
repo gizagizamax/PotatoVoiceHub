@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PotatoVoiceHub", "PotatoVoi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Plugin_PotatoVoiceHub", "Plugin_PotatoVoiceHub\Plugin_PotatoVoiceHub.csproj", "{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VoiceroidTalkPlusReceiverHub", "VoiceroidTalkPlusReceiverHub\VoiceroidTalkPlusReceiverHub.csproj", "{AD0E24F4-66E0-4CE4-B19C-11C2BBE9BCEE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +19,14 @@ Global
 		{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D133DAEE-9E25-4BF3-A0D1-9AECD2D6B627}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B94003B-3260-4ACA-A945-1F9F1FB47BCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD0E24F4-66E0-4CE4-B19C-11C2BBE9BCEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD0E24F4-66E0-4CE4-B19C-11C2BBE9BCEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD0E24F4-66E0-4CE4-B19C-11C2BBE9BCEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD0E24F4-66E0-4CE4-B19C-11C2BBE9BCEE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

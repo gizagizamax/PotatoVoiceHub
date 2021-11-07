@@ -6,7 +6,7 @@
         x:Class="PotatoVoiceHub.MainWindow"
         mc:Ignorable="d"
         Loaded="Window_Loaded"
-        Title="VoiceHub" Height="450" Width="400">
+        Title="VoiceHub" Height="444" Width="400" Icon="/icon.png">
     <StackPanel>
 
         <StackPanel Margin="0,0,0,5">
@@ -37,7 +37,7 @@
         <Border Height="2" Background="#FF616161"/>
         <StackPanel Margin="0,0,0,5" Height="188">
             <Label Content="ログ"/>
-            <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Auto" MinHeight="160" AcceptsReturn="True"/>
+            <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Auto" Height="130" AcceptsReturn="True" IsUndoEnabled="False"/>
         </StackPanel>
 
     </StackPanel>

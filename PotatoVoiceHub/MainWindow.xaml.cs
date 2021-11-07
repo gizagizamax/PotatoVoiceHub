@@ -6,15 +6,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Web;
 using System.Windows;
 
 namespace PotatoVoiceHub
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private HttpListener listener;
@@ -75,7 +71,7 @@ namespace PotatoVoiceHub
         private void mklink()
         {
             var com = new Process();
-            com.StartInfo.FileName = System.Environment.GetEnvironmentVariable("ComSpec");
+            com.StartInfo.FileName = Environment.GetEnvironmentVariable("ComSpec");
             com.StartInfo.UseShellExecute = false;
             com.StartInfo.RedirectStandardOutput = true;
             com.StartInfo.RedirectStandardInput = false;
@@ -137,7 +133,11 @@ namespace PotatoVoiceHub
             {
                 WriteLog("ダークモード");
 
-                AIUtil.GetMainPresenter().SetTheme("Dark");
+                var mainPresenter = AIUtil.GetMainPresenter();
+                if (mainPresenter != null)
+                {
+                    mainPresenter.SetTheme("Dark");
+                }
             }
             catch (Exception exc)
             {
@@ -151,7 +151,11 @@ namespace PotatoVoiceHub
             {
                 WriteLog("シンプルモード");
 
-                AIUtil.GetMainPresenter().SetTheme("Simple");
+                var mainPresenter = AIUtil.GetMainPresenter();
+                if (mainPresenter != null)
+                {
+                    mainPresenter.SetTheme("Simple");
+                }
             }
             catch (Exception exc)
             {

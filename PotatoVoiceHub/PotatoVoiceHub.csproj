@@ -6,6 +6,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <DebugType>embedded</DebugType>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -15,6 +16,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="AI.Framework">
@@ -51,6 +60,10 @@
       <HintPath>Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="icon.png" />
   </ItemGroup>
 
 </Project>

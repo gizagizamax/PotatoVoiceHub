@@ -197,19 +197,38 @@ namespace PotatoVoiceHub
             string response;
             try
             {
-                if (AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                var api = context.Request.Url.AbsolutePath;
+                var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
+                switch (api)
                 {
-                    response = "{\"status\":\"playing\"}";
-                }
-                else
-                {
-                    Dispatcher.Invoke((() =>
-                    {
-                        var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
-                        AIUtil.GetTextEditPresenter().ViewModel.Text = queryString["text"];
-                        AIUtil.GetMainModel().PlayText(queryString["text"], AIUtil.GetMainPresenter().CurrentPresetName);
-                    }));
-                    response = "{\"status\":\"ok\"}";
+                    case "/getStatus":
+                        if (AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                        {
+                            response = "{\"status\":\"playing\"}";
+                        }
+                        else
+                        {
+                            response = "{\"status\":\"waiting\"}";
+                        }
+                        break;
+                    case "/":
+                        if (AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                        {
+                            response = "{\"status\":\"playing\"}";
+                        }
+                        else
+                        {
+                            Dispatcher.Invoke((() =>
+                            {
+                                AIUtil.GetTextEditPresenter().ViewModel.Text = queryString["text"];
+                                AIUtil.GetMainModel().PlayText(queryString["text"], AIUtil.GetMainPresenter().CurrentPresetName);
+                            }));
+                            response = "{\"status\":\"ok\"}";
+                        }
+                        break;
+                    default:
+                        response = "{\"status\":\"\"}";
+                        break;
                 }
             }
             catch (Exception)

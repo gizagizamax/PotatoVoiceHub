@@ -57,6 +57,11 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 
 # リリースノート
 
+## PotatoVoiceHub_v2021.11.09
+
+VoiceroidTalkPlus のランダム再生を使って「AIVOICE」→「VOICEROID・ガイノイド」の順に発話すると
+AIVOICEとVOICEROIDが同時に発話していたのを修正(VOICEROID持ってないので未確認。報告求)
+
 ## PotatoVoiceHub_v2021.11.08
 
 VoiceroidTalkPlusReceiverHub.exe を追加

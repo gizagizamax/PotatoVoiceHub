@@ -81,6 +81,31 @@ namespace VoiceroidTalkPlusReceiverHub
                                 break;
                             }
                         }
+                        else
+                        {
+                            while (true)
+                            {
+                                string html;
+                                using (var st = WebRequest.Create("http://localhost:" + txtPort.Text + "/getStatus").GetResponse().GetResponseStream())
+                                {
+                                    using (var sr = new StreamReader(st, Encoding.UTF8))
+                                    {
+                                        html = sr.ReadToEnd();
+                                    }
+                                }
+
+                                WriteLog("éÛêMÅF" + html);
+
+                                var responsePotatoHub = JsonConvert.DeserializeObject<ResponsePotatoHub>(html);
+                                if (responsePotatoHub.status == "playing")
+                                {
+                                    Thread.Sleep(1);
+                                    continue;
+                                }
+                                break;
+                            }
+
+                        }
 
                         if (isSendMessage)
                         {

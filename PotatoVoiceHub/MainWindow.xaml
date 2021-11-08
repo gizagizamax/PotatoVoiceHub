@@ -6,7 +6,7 @@
         x:Class="PotatoVoiceHub.MainWindow"
         mc:Ignorable="d"
         Loaded="Window_Loaded"
-        Title="VoiceHub" Height="444" Width="400" Icon="/icon.png">
+        Title="PotatoVoiceHub" Height="444" Width="400" Icon="/icon.png">
     <StackPanel>
 
         <StackPanel Margin="0,0,0,5">

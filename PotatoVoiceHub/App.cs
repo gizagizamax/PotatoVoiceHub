@@ -10,7 +10,7 @@ namespace PotatoVoiceHub
     public class App : Application
     {
         [STAThread]
-        public static new void Main()
+        public static void Main()
         {
             new MainWindow().ShowDialog();
         }

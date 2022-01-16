@@ -21,5 +21,10 @@ namespace PotatoVoiceHub
         {
             return MainModel.Current;
         }
+
+        public static AppFramework GetAppFramework()
+        {
+            return AppFramework.Current;
+        }
     }
 }

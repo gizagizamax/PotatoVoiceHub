@@ -22,7 +22,7 @@ namespace Plugin_PotatoVoiceHub
 
         public string Name => "PluginPotatoVoice";
 
-        public string Version => "2021/10/29版";
+        public string Version => "2021/11/24版";
 
         public string Caption => "棒読みちゃんの音声をA.I.Voiceに変えます";
 
@@ -70,8 +70,24 @@ namespace Plugin_PotatoVoiceHub
             isTalking = true;
             while (isTalking)
             {
+                string text;
+                if (e.ReplaceWord.Contains("(Ｔ "))
+                {
+                    form1.writeLog("コマンドは読まない。" + e.ReplaceWord);
+                    break;
+                }
+
+                // 棒読みちゃんの辞書変換を使う
+                if (pluginPotatoVoiceOption.UseReplace)
+                {
+                    text = e.ReplaceWord;
+
+                } else {
+                    text = e.TalkTask.SourceText;
+                }
+
                 string html;
-                using (var st = WebRequest.Create("http://localhost:" + pluginPotatoVoiceOption.HttpPort + "?text=" + HttpUtility.UrlEncode(e.TalkTask.SourceText)).GetResponse().GetResponseStream())
+                using (var st = WebRequest.Create("http://localhost:" + pluginPotatoVoiceOption.HttpPort + "?text=" + HttpUtility.UrlEncode(text)).GetResponse().GetResponseStream())
                 {
                     using (var sr = new StreamReader(st, Encoding.UTF8))
                     {
@@ -99,11 +115,13 @@ namespace Plugin_PotatoVoiceHub
             {
                 var txt = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "Plugin_PotatoVoiceHubOption.json");
                 Parser parser = new Parser(txt);
-                pluginPotatoVoiceOption.HttpPort = parser["httpPort"].String;
+                if (!parser["httpPort"].TryGetString(out pluginPotatoVoiceOption.HttpPort)) pluginPotatoVoiceOption.HttpPort = "2119";
+                if (!parser["useReplace"].TryGetBool(out pluginPotatoVoiceOption.UseReplace)) pluginPotatoVoiceOption.UseReplace = true;
             }
             catch (Exception)
             {
                 pluginPotatoVoiceOption.HttpPort = "2119";
+                pluginPotatoVoiceOption.UseReplace = true;
             }
         }
     }

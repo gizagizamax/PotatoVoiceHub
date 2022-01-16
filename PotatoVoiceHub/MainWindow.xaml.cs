@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Web;
 using System.Windows;
 
@@ -13,7 +14,10 @@ namespace PotatoVoiceHub
 {
     public partial class MainWindow : Window
     {
+        private VoiceHubOption option;
         private HttpListener listener;
+        private Thread threadClipboard;
+        private string clipboardTextLast = "";
         private List<string> listLog = new List<string>();
 
         public MainWindow()
@@ -60,7 +64,9 @@ namespace PotatoVoiceHub
 
                 mklink();
                 initHttp();
+                initClipboard();
                 startAivoice();
+                btnStartAIVoice.IsEnabled = false;
             }
             catch (Exception exc)
             {
@@ -76,7 +82,7 @@ namespace PotatoVoiceHub
             com.StartInfo.RedirectStandardOutput = true;
             com.StartInfo.RedirectStandardInput = false;
             com.StartInfo.CreateNoWindow = true;
-            var aivoiceEditorPath = new FileInfo(txtAIVoiceEditorPath.Text);
+            var aivoiceEditorPath = new FileInfo(option.aiVoiceEditorPath);
             foreach (var aiFile in aivoiceEditorPath.Directory.EnumerateFiles())
             {
                 var cmd = String.Format(@"/c mklink ""{0}{1}"" ""{2}""", AppDomain.CurrentDomain.BaseDirectory, aiFile.Name, aiFile.FullName);
@@ -99,7 +105,7 @@ namespace PotatoVoiceHub
         private void initHttp()
         {
             listener = new HttpListener();
-            listener.Prefixes.Add("http://+:" + txtHttpPort.Text + "/");
+            listener.Prefixes.Add("http://+:" + option.httpPort + "/");
             listener.Start();
             startLoop(listener);
         }
@@ -110,57 +116,6 @@ namespace PotatoVoiceHub
             var app = new AI.Talk.Editor.App();
             app.InitializeComponent();
             app.Run();
-        }
-
-        private void btnPlay_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                WriteLog("Play");
-
-                AIUtil.GetTextEditPresenter().ViewModel.Text = txtSpeekText.Text;
-                AIUtil.GetMainModel().PlayText(txtSpeekText.Text, AIUtil.GetMainPresenter().CurrentPresetName);
-            }
-            catch (Exception exc)
-            {
-                WriteLog(exc.Message + "\n" + exc.StackTrace);
-            }
-        }
-
-        private void btnDark_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                WriteLog("ダークモード");
-
-                var mainPresenter = AIUtil.GetMainPresenter();
-                if (mainPresenter != null)
-                {
-                    mainPresenter.SetTheme("Dark");
-                }
-            }
-            catch (Exception exc)
-            {
-                WriteLog(exc.Message + "\n" + exc.StackTrace);
-            }
-        }
-
-        private void btnSimple_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                WriteLog("シンプルモード");
-
-                var mainPresenter = AIUtil.GetMainPresenter();
-                if (mainPresenter != null)
-                {
-                    mainPresenter.SetTheme("Simple");
-                }
-            }
-            catch (Exception exc)
-            {
-                WriteLog(exc.Message + "\n" + exc.StackTrace);
-            }
         }
 
         private void startLoop(HttpListener _listener)
@@ -198,11 +153,10 @@ namespace PotatoVoiceHub
             try
             {
                 var api = context.Request.Url.AbsolutePath;
-                var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
                 switch (api)
                 {
                     case "/getStatus":
-                        if (AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                        if (AIUtil.GetTextEditPresenter() == null || AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
                         {
                             response = "{\"status\":\"playing\"}";
                         }
@@ -211,13 +165,32 @@ namespace PotatoVoiceHub
                             response = "{\"status\":\"waiting\"}";
                         }
                         break;
-                    case "/":
-                        if (AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                    case "/saveWave":
+                        if (AIUtil.GetTextEditPresenter() == null || AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
                         {
                             response = "{\"status\":\"playing\"}";
                         }
                         else
                         {
+                            var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding("sjis"));
+                            AI.Framework.SaveWaveSettings sws = new AI.Framework.SaveWaveSettings(AI.Framework.AppFramework.Current.UserSettings.SaveWave)
+                            {
+                                BeginPause = 0,
+                                TermPause = 0,
+                                FilePath = queryString["filePath"]
+                            };
+                            AIUtil.GetMainModel().SaveWave(queryString["text"], AIUtil.GetMainPresenter().CurrentPresetName, sws).Wait();
+                            response = "{\"status\":\"ok\"}";
+                        }
+                        break;
+                    case "/":
+                        if (AIUtil.GetTextEditPresenter() == null || AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                        {
+                            response = "{\"status\":\"playing\"}";
+                        }
+                        else
+                        {
+                            var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
                             Dispatcher.Invoke((() =>
                             {
                                 AIUtil.GetTextEditPresenter().ViewModel.Text = queryString["text"];
@@ -242,6 +215,95 @@ namespace PotatoVoiceHub
             context.Response.OutputStream.Close();
         }
 
+        private void initClipboard()
+        {
+            if (threadClipboard != null)
+            {
+                return;
+            }
+
+            clipboardTextLast = Clipboard.GetText().Trim();
+
+            threadClipboard = new Thread(new ThreadStart(() =>
+            {
+                // Windowが生きてる間はポーリングする
+                while (IsVisible)
+                {
+                    try
+                    {
+                        if (AIUtil.GetTextEditPresenter() == null || AIUtil.GetTextEditPresenter().ViewModel.IsPlaying)
+                        {
+                            Thread.Sleep(100);
+                            continue;
+                        }
+
+                        var clipboardText = "";
+                        Dispatcher.Invoke((() =>
+                        {
+                            clipboardText = Clipboard.GetText().Trim();
+                        }));
+                        if (clipboardText == "" || clipboardText == clipboardTextLast)
+                        {
+                            clipboardTextLast = clipboardText;
+                            Thread.Sleep(100);
+                            continue;
+                        }
+
+                        if (bool.Parse(option.isClipboardPlay))
+                        {
+                            Dispatcher.Invoke((() =>
+                            {
+                                AIUtil.GetTextEditPresenter().ViewModel.Text = clipboardText;
+                                AIUtil.GetMainModel().PlayText(clipboardText, AIUtil.GetMainPresenter().CurrentPresetName);
+                            }));
+
+                            clipboardTextLast = clipboardText;
+                        }
+
+                        if (bool.Parse(option.isClipboardSaveWave))
+                        {
+                            if (AIUtil.GetAppFramework().UserSettings.SaveWave.FilePathSelectionMode == AI.Framework.FilePathSelectionMode.FileSaveDialog)
+                            {
+                                MessageBox.Show("A.I.Voice Editorで[プロジェクト設定]->[音声ファイル保存]->[ファイル命名規則を指定して選択する]を選んでください");
+                                clipboardTextLast = clipboardText;
+                                Thread.Sleep(100);
+                                continue;
+                            }
+
+                            //なぜかA.I.VOICE Editorで最後に出力したパスになってしまうので、ファイル名を用意する
+                            var clipboardFileName = clipboardText;
+                            //ファイル名に使えない文字は消す
+                            foreach (char c in Path.GetInvalidFileNameChars())
+                            {
+                                clipboardFileName = clipboardFileName.Replace(c.ToString(), "");
+                            }
+                            if (clipboardFileName.Length > AIUtil.GetAppFramework().UserSettings.SaveWave.NamingRule.TextLength)
+                            {
+                                clipboardFileName = clipboardFileName.Substring(0, AIUtil.GetAppFramework().UserSettings.SaveWave.NamingRule.TextLength);
+                            }
+
+                            var fileName = AIUtil.GetAppFramework().UserSettings.SaveWave.NamingRule.NamingRule;
+                            fileName = fileName.Replace("{yyyyMMdd}", DateTime.Now.ToString("yyyyMMdd"));
+                            fileName = fileName.Replace("{HHmmss}", DateTime.Now.ToString("HHmmss"));
+                            fileName = fileName.Replace("{VoicePreset}", AIUtil.GetMainPresenter().CurrentPresetName);
+                            fileName = fileName.Replace("{Text}", clipboardFileName);
+
+                            AIUtil.GetAppFramework().UserSettings.SaveWave.FilePath = AIUtil.GetAppFramework().UserSettings.SaveWave.NamingRule.OutDir + "\\" + fileName + ".wav";
+                            AIUtil.GetMainModel().SaveWave(clipboardText, AIUtil.GetMainPresenter().CurrentPresetName, AIUtil.GetAppFramework().UserSettings.SaveWave).Wait();
+
+                            clipboardTextLast = clipboardText;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                    Thread.Sleep(100);
+                }
+            }));
+            threadClipboard.Start();
+        }
+
         private void WriteLog(string log)
         {
             listLog.Add(log);
@@ -262,9 +324,6 @@ namespace PotatoVoiceHub
 
         private void saveOption()
         {
-            var option = new VoiceHubOption();
-            option.aiVoiceEditorPath = txtAIVoiceEditorPath.Text;
-            option.httpPort = txtHttpPort.Text;
             string jsonStr = JsonConvert.SerializeObject(option, Formatting.Indented);
             File.WriteAllText(AppDomain.CurrentDomain.BaseDirectory + "VoiceHubOption.json", jsonStr);
         }
@@ -274,13 +333,16 @@ namespace PotatoVoiceHub
             try
             {
                 var jsonStr = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "VoiceHubOption.json");
-                var option = JsonConvert.DeserializeObject<VoiceHubOption>(jsonStr);
+                option = JsonConvert.DeserializeObject<VoiceHubOption>(jsonStr);
                 txtAIVoiceEditorPath.Text = option.aiVoiceEditorPath;
                 txtHttpPort.Text = option.httpPort;
+                txtSaveWaveEncode.Text = option.saveWaveEncode;
+                cbClipboardPlay.IsChecked = bool.Parse(option.isClipboardPlay);
+                cbClipboardSaveWave.IsChecked = bool.Parse(option.isClipboardSaveWave);
             }
             catch (Exception)
             {
-                txtHttpPort.Text = "2119";
+                option = new VoiceHubOption();
             }
 
             if (txtAIVoiceEditorPath.Text == "")
@@ -295,16 +357,65 @@ namespace PotatoVoiceHub
                     }
                 }
             }
+            if (txtHttpPort.Text == "")
+            {
+                txtHttpPort.Text = "2119";
+            }
+            if (txtSaveWaveEncode.Text == "")
+            {
+                txtSaveWaveEncode.Text = "sjis";
+            }
         }
 
         private void txtAIVoiceEditorPath_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
+            option.aiVoiceEditorPath = txtAIVoiceEditorPath.Text;
             saveOption();
         }
 
         private void txtHttpPort_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
+            option.httpPort = txtHttpPort.Text;
             saveOption();
+        }
+
+        private void txtSaveWaveEncode_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            option.saveWaveEncode = txtSaveWaveEncode.Text;
+            saveOption();
+        }
+
+        private void cbClipboardPlay_Checked(object sender, RoutedEventArgs e)
+        {
+            option.isClipboardPlay = cbClipboardPlay.IsChecked.ToString();
+            saveOption();
+        }
+
+        private void cbClipboardPlay_Unchecked(object sender, RoutedEventArgs e)
+        {
+            option.isClipboardPlay = cbClipboardPlay.IsChecked.ToString();
+            saveOption();
+        }
+
+        private void cbClipboardSaveWave_Checked(object sender, RoutedEventArgs e)
+        {
+            option.isClipboardSaveWave = cbClipboardSaveWave.IsChecked.ToString();
+            saveOption();
+        }
+
+        private void cbClipboardSaveWave_Unchecked(object sender, RoutedEventArgs e)
+        {
+            option.isClipboardSaveWave = cbClipboardSaveWave.IsChecked.ToString();
+            saveOption();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (threadClipboard != null)
+            {
+                threadClipboard.Abort();
+                threadClipboard = null;
+            }
         }
     }
 }

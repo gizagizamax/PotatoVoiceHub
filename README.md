@@ -55,12 +55,65 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 
 
 
+## Recotte Studio と連携する
+
+プロジェクトの編集画面
+→メニューの[ファイル]
+→[環境設定]
+→[ユーザー定義音声連携の設定]を開きます
+
+[＋]ボタンを押して下記設定をします
+音声連携名：適当な名前
+連携方法：コメントごとにコマンドを実行
+実行コマンド：C:\Windows\System32\cmd.exe
+引数：/C curl -G "http://localhost:2119/saveWave" --data-urlencode "text=%c" --data-urlencode "filePath=%o"
+拡張子：wav
+
+[適応]を押してプロジェクトの編集画面まで戻ります。
+→タイムラインにある[話者１]の設定を開きます([レイヤーのプロパティ]画面が開く)
+→[音声連携]を先ほど適当な名前をつけたやつに変更します。
+→[OK]でプロジェクトの編集画面へ。
+
+[話者１]にコメントを記載します。
+→[話者１]に更新マークが出てくるので押します。
+→AIVoiceと連携して、コメントに音声がつきます。
+※あらかじめ、PotateVoiceHub経由でAIVoice Editorを起動しておいてください。
+
+
+
 # リリースノート
+
+## PotatoVoiceHub_v2022.01.16
+
+Plugin_PotatoVoiceHub
+
+  ・「棒読みちゃんの辞書変換を使う」チェックボックスを追加
+
+  ・棒読みちゃんコマンドは読み上げないように修正。
+
+PotetoVoiceHub
+
+  ・テーマの切り替え機能を削除
+
+  最新のAIVoice Editorに機能が追加されていたため。
+
+  ・お試し再生の機能を削除
+
+  元々デバッグ用に作った機能で、機能が充実してきたので邪魔なので消しました。
+
+  ・音声保存APIを追加
+
+  Recotte StudioからShift-Jisで送られてくるようなので、エンコードを指定できるようにしました。
+
+  ・クリップボード連携を追加
+
+  文字をコピーしたら、AIVoiceで勝手に再生したり、ファイルに保存したりします。
 
 ## PotatoVoiceHub_v2021.11.09
 
 VoiceroidTalkPlus のランダム再生を使って「AIVOICE」→「VOICEROID・ガイノイド」の順に発話すると
-AIVOICEとVOICEROIDが同時に発話していたのを修正(VOICEROID持ってないので未確認。報告求)
+
+AIVOICEとVOICEROIDが同時に発話していたのを修正
 
 ## PotatoVoiceHub_v2021.11.08
 

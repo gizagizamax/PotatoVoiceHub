@@ -6,7 +6,7 @@
         x:Class="PotatoVoiceHub.MainWindow"
         mc:Ignorable="d"
         Loaded="Window_Loaded"
-        Title="PotatoVoiceHub" Height="444" Width="400" Icon="/icon.png">
+        Title="PotatoVoiceHub" Height="444" Width="540" Icon="/icon.png" Closing="Window_Closing">
     <StackPanel>
 
         <StackPanel Margin="0,0,0,5">
@@ -19,23 +19,19 @@
                 <Label Content="受信HTTPポート(http://localhost:ポート?text=メッセージ)"/>
                 <TextBox x:Name="txtHttpPort" Text="" TextChanged="txtHttpPort_TextChanged"/>
             </StackPanel>
-            <Button Content="A.I.VOICE 開始" Click="btnStartAIVoice_Click" HorizontalAlignment="Left" Width="100"/>
-        </StackPanel>
-        <Border Height="2" Background="#FF616161"/>
-        <StackPanel Margin="0,0,0,5">
-            <Label Content="テーマ"/>
-            <StackPanel Orientation="Horizontal">
-                <Button Content="ダークモード" Click="btnDark_Click" HorizontalAlignment="Left" Width="100"/>
-                <Button Content="シンプルモード" Click="btnSimple_Click" HorizontalAlignment="Left" Width="100"/>
+            <StackPanel Margin="0,5,0,10">
+                <Label Content="音声保存APIのパラメータのエンコード(http://localhost:ポート/saveWave?text=メッセージ＆filePath=フルパス)"/>
+                <TextBox x:Name="txtSaveWaveEncode" Text="" TextChanged="txtSaveWaveEncode_TextChanged"/>
             </StackPanel>
+            <StackPanel Margin="0,5,0,10">
+                <Label Content="クリップボード連携"/>
+                <CheckBox x:Name="cbClipboardPlay" Checked="cbClipboardPlay_Checked" Unchecked="cbClipboardPlay_Unchecked">再生する</CheckBox>
+                <CheckBox x:Name="cbClipboardSaveWave" Checked="cbClipboardSaveWave_Checked" Unchecked="cbClipboardSaveWave_Unchecked">保存する。ファイル名の{Project}{Number}は未対応です。</CheckBox>
+            </StackPanel>
+            <Button x:Name="btnStartAIVoice" Content="A.I.VOICE 開始" Click="btnStartAIVoice_Click" HorizontalAlignment="Left" Width="100"/>
         </StackPanel>
         <Border Height="2" Background="#FF616161"/>
-        <StackPanel Margin="0,5,0,5">
-            <TextBox x:Name="txtSpeekText" Text="" Margin="0,0,0,5"/>
-            <Button Content="お試し再生" Click="btnPlay_Click" HorizontalAlignment="Left" Width="100"/>
-        </StackPanel>
-        <Border Height="2" Background="#FF616161"/>
-        <StackPanel Margin="0,0,0,5" Height="188">
+        <StackPanel Margin="0,0,0,5" Height="159">
             <Label Content="ログ"/>
             <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Auto" Height="130" AcceptsReturn="True" IsUndoEnabled="False"/>
         </StackPanel>

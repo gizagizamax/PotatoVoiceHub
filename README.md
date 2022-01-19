@@ -66,12 +66,14 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 音声連携名：適当な名前
 連携方法：コメントごとにコマンドを実行
 実行コマンド：C:\Windows\System32\cmd.exe
-引数：/C curl -G "http://localhost:2119/saveWave" --data-urlencode "text=%c" --data-urlencode "filePath=%o"
+引数：/C curl -G "http://localhost:2119/saveWave" --data-urlencode "text=%c" --data-urlencode "filePath=%o" --data-urlencode "presetName=%s"
 拡張子：wav
 
 [適応]を押してプロジェクトの編集画面まで戻ります。
 →タイムラインにある[話者１]の設定を開きます([レイヤーのプロパティ]画面が開く)
 →[音声連携]を先ほど適当な名前をつけたやつに変更します。
+→[話者名]にA.I.Voice Editorのプリセット名を指定します。
+  [話者名]を指定しないと、A.I.Voice Editorで選択しているキャラになります。
 →[OK]でプロジェクトの編集画面へ。
 
 [話者１]にコメントを記載します。
@@ -82,6 +84,13 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 
 
 # リリースノート
+
+## PotatoVoiceHub_v2022.01.19
+
+Plugin_PotatoVoiceHub
+
+  ・Recotte Studioと連携時に[話者名]を指定できるようにしました。
+
 
 ## PotatoVoiceHub_v2022.01.16
 

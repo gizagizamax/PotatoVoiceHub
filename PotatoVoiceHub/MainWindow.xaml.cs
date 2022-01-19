@@ -172,14 +172,38 @@ namespace PotatoVoiceHub
                         }
                         else
                         {
-                            var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding("sjis"));
+                            var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding(option.saveWaveEncode));
+
+                            var presetName = "";
+                            if (queryString["presetName"] == null)
+                            {
+                                presetName = AIUtil.GetMainPresenter().CurrentPresetName;
+                            }
+                            else
+                            {
+                                foreach (var voicePreset in AIUtil.GetAppFramework().UserSettings.VoicePreset.VoicePresets)
+                                {
+                                    if (queryString["presetName"] == voicePreset.PresetName)
+                                    {
+                                        presetName = voicePreset.PresetName;
+                                        break;
+                                    }
+                                }
+
+                                if (presetName == "")
+                                {
+                                    presetName = AIUtil.GetMainPresenter().CurrentPresetName;
+                                }
+                            }
+
                             AI.Framework.SaveWaveSettings sws = new AI.Framework.SaveWaveSettings(AI.Framework.AppFramework.Current.UserSettings.SaveWave)
                             {
                                 BeginPause = 0,
                                 TermPause = 0,
                                 FilePath = queryString["filePath"]
                             };
-                            AIUtil.GetMainModel().SaveWave(queryString["text"], AIUtil.GetMainPresenter().CurrentPresetName, sws).Wait();
+                            AIUtil.GetMainModel().SaveWave(queryString["text"], presetName, sws).Wait();
+
                             response = "{\"status\":\"ok\"}";
                         }
                         break;

@@ -20,7 +20,8 @@
                 <TextBox x:Name="txtHttpPort" Text="" TextChanged="txtHttpPort_TextChanged"/>
             </StackPanel>
             <StackPanel Margin="0,5,0,10">
-                <Label Content="音声保存APIのパラメータのエンコード(http://localhost:ポート/saveWave?text=メッセージ＆filePath=フルパス)"/>
+                <Label Content="音声保存APIのパラメータのエンコード"/>
+                <Label Content="(http://localhost:ポート/saveWave?text=メッセージ&amp;filePath=フルパス&amp;presetName=プリセット名)"/>
                 <TextBox x:Name="txtSaveWaveEncode" Text="" TextChanged="txtSaveWaveEncode_TextChanged"/>
             </StackPanel>
             <StackPanel Margin="0,5,0,10">
@@ -31,9 +32,9 @@
             <Button x:Name="btnStartAIVoice" Content="A.I.VOICE 開始" Click="btnStartAIVoice_Click" HorizontalAlignment="Left" Width="100"/>
         </StackPanel>
         <Border Height="2" Background="#FF616161"/>
-        <StackPanel Margin="0,0,0,5" Height="159">
+        <StackPanel Margin="0,0,0,5" Height="133">
             <Label Content="ログ"/>
-            <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Auto" Height="130" AcceptsReturn="True" IsUndoEnabled="False"/>
+            <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Auto" Height="105" AcceptsReturn="True" IsUndoEnabled="False"/>
         </StackPanel>
 
     </StackPanel>

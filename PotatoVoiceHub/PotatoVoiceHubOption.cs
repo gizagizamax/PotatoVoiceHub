@@ -2,10 +2,10 @@
 {
     public class VoiceHubOption
     {
-        public string aiVoiceEditorPath;
+        public string saveAudioPath;
         public string httpPort;
-        public string saveWaveEncode;
+        public string saveAudioEncode;
         public string isClipboardPlay;
-        public string isClipboardSaveWave;
+        public string isClipboardSaveAudio;
     }
 }

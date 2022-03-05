@@ -62,7 +62,7 @@ namespace VoiceroidTalkPlusReceiverHub
                             while (true)
                             {
                                 string html;
-                                using (var st = WebRequest.Create("http://localhost:" + txtPort.Text + "?text=" + HttpUtility.UrlEncode(txtSubstr)).GetResponse().GetResponseStream())
+                                using (var st = WebRequest.Create("http://localhost:" + txtPort.Text + "/play?text=" + HttpUtility.UrlEncode(txtSubstr)).GetResponse().GetResponseStream())
                                 {
                                     using (var sr = new StreamReader(st, Encoding.UTF8))
                                     {
@@ -73,7 +73,7 @@ namespace VoiceroidTalkPlusReceiverHub
                                 WriteLog("受信：" + html);
 
                                 var responsePotatoHub = JsonConvert.DeserializeObject<ResponsePotatoHub>(html);
-                                if (responsePotatoHub.status == "playing")
+                                if (responsePotatoHub.status == "busy")
                                 {
                                     Thread.Sleep(1);
                                     continue;
@@ -97,7 +97,7 @@ namespace VoiceroidTalkPlusReceiverHub
                                 WriteLog("受信：" + html);
 
                                 var responsePotatoHub = JsonConvert.DeserializeObject<ResponsePotatoHub>(html);
-                                if (responsePotatoHub.status == "playing")
+                                if (responsePotatoHub.status == "busy")
                                 {
                                     Thread.Sleep(1);
                                     continue;

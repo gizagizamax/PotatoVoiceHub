@@ -22,7 +22,7 @@ namespace Plugin_PotatoVoiceHub
 
         public string Name => "PluginPotatoVoice";
 
-        public string Version => "2021/11/24版";
+        public string Version => "2022/03/05版";
 
         public string Caption => "棒読みちゃんの音声をA.I.Voiceに変えます";
 
@@ -87,7 +87,7 @@ namespace Plugin_PotatoVoiceHub
                 }
 
                 string html;
-                using (var st = WebRequest.Create("http://localhost:" + pluginPotatoVoiceOption.HttpPort + "?text=" + HttpUtility.UrlEncode(text)).GetResponse().GetResponseStream())
+                using (var st = WebRequest.Create("http://localhost:" + pluginPotatoVoiceOption.HttpPort + "/play?text=" + HttpUtility.UrlEncode(text)).GetResponse().GetResponseStream())
                 {
                     using (var sr = new StreamReader(st, Encoding.UTF8))
                     {
@@ -98,7 +98,7 @@ namespace Plugin_PotatoVoiceHub
                 form1.writeLog(html);
 
                 var json = new Parser(html);
-                if (json["status"].String == "playing")
+                if (json["status"].String == "busy")
                 {
                     Thread.Sleep(1);
                     continue;

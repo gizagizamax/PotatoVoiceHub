@@ -50,6 +50,9 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 
 # リリースノート
 
+## PotatoVoiceHub_v2022.03.05.2
+設定ファイルがバグってたので修正  
+
 ## PotatoVoiceHub_v2022.03.05
 A.I.Voice 1.3で公式APIが公開されました。  
 それに伴い全体的に修正しています。  

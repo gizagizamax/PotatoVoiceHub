@@ -326,7 +326,7 @@ namespace PotatoVoiceHub
             txtSaveAudioPath.Text =
                 string.IsNullOrEmpty(option.saveAudioPath) ?
                 AppDomain.CurrentDomain.BaseDirectory + @"clipboard\{yyyyMMdd}_{HHmmss}_{VoicePreset}_{Text}" :
-                txtSaveAudioPath.Text = option.saveAudioPath;
+                option.saveAudioPath;
 
             txtHttpPort.Text =
                 string.IsNullOrEmpty(option.httpPort) ?
@@ -342,11 +342,15 @@ namespace PotatoVoiceHub
                 string.IsNullOrEmpty(option.isClipboardPlay) ?
                 false:
                 bool.Parse(option.isClipboardPlay);
+            // チェックボックスはOFF→OFFだと変わらないので、イベントに頼らない
+            option.isClipboardPlay = cbClipboardPlay.IsChecked.ToString();
 
             cbClipboardSaveAudio.IsChecked =
                 string.IsNullOrEmpty(option.isClipboardSaveAudio) ?
                 false:
                 bool.Parse(option.isClipboardSaveAudio);
+            option.isClipboardSaveAudio = cbClipboardSaveAudio.IsChecked.ToString();
+            saveOption();
         }
 
         private void txtSaveAudioPath_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)

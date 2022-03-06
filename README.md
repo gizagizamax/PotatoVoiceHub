@@ -50,6 +50,9 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 
 # リリースノート
 
+## PotatoVoiceHub_v2022.03.06
+時間経過で接続が切れるっぽいので再接続するよう修正  
+
 ## PotatoVoiceHub_v2022.03.05.2
 設定ファイルがバグってたので修正  
 

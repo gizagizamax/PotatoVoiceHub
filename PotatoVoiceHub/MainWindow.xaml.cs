@@ -48,7 +48,10 @@ namespace PotatoVoiceHub
                 {
                     _ttsControl.StartHost();
                 }
-                _ttsControl.Connect();
+                if (_ttsControl.Status == HostStatus.NotConnected)
+                {
+                    _ttsControl.Connect();
+                }
 
                 initHttp();
                 initClipboard();
@@ -102,6 +105,11 @@ namespace PotatoVoiceHub
             string response;
             try
             {
+                //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
+                if (_ttsControl.Status == HostStatus.NotConnected)
+                {
+                    _ttsControl.Connect();
+                }
                 var api = context.Request.Url.AbsolutePath;
                 switch (api)
                 {
@@ -230,6 +238,12 @@ namespace PotatoVoiceHub
 
                         if (bool.Parse(option.isClipboardSaveAudio))
                         {
+                            //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
+                            if (_ttsControl.Status == HostStatus.NotConnected)
+                            {
+                                _ttsControl.Connect();
+                            }
+
                             //ファイル名に使えない文字は消す.円マークまで消える。実装が面倒なので辞める
                             //foreach (char c in Path.GetInvalidFileNameChars())
                             //{
@@ -264,6 +278,12 @@ namespace PotatoVoiceHub
 
                         if (bool.Parse(option.isClipboardPlay))
                         {
+                            //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
+                            if (_ttsControl.Status == HostStatus.NotConnected)
+                            {
+                                _ttsControl.Connect();
+                            }
+
                             _ttsControl.Text = clipboardText;
 
                             _ttsControl.Play();

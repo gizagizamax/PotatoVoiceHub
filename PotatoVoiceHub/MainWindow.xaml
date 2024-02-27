@@ -6,35 +6,52 @@
         x:Class="PotatoVoiceHub.MainWindow"
         mc:Ignorable="d"
         Loaded="Window_Loaded"
-        Title="PotatoVoiceHub" Height="444" Width="540" Icon="/icon.png" Closing="Window_Closing">
-    <StackPanel>
-
-        <StackPanel Margin="0,0,0,5">
-            <StackPanel Margin="0,5,0,10">
-                <Label Content="再生APIのHTTPポート(http://localhost:ポート/play?text=メッセージ&amp;preset=プリセット名)"/>
-                <TextBox x:Name="txtHttpPort" Text="" TextChanged="txtHttpPort_TextChanged"/>
+        Title="PotatoVoiceHub" Height="500" Width="540" Icon="/icon.png" Closing="Window_Closing">
+    <ScrollViewer>
+        <StackPanel>
+            <StackPanel Margin="0,0,0,5">
+                <StackPanel Margin="0,5,0,10">
+                    <Label Content="再生APIのHTTPポート(http://localhost:ポート/play?text=メッセージ&amp;preset=プリセット名)"/>
+                    <TextBox x:Name="txtHttpPort" Text="" TextChanged="txtHttpPort_TextChanged"/>
+                </StackPanel>
+                <StackPanel Margin="0,5,0,10">
+                    <Label Content="音声保存APIのパラメータのエンコード"/>
+                    <Label Content="(http://localhost:ポート/saveAudio?text=メッセージ&amp;path=フルパス&amp;preset=プリセット名)"/>
+                    <TextBox x:Name="txtSaveAudioEncode" Text="" TextChanged="txtSaveAudioEncode_TextChanged"/>
+                </StackPanel>
+                <StackPanel Margin="0,5,0,10">
+                    <Label Content="クリップボード連携。文字をコピーした時に処理します"/>
+                    <CheckBox x:Name="cbClipboardPlay" Checked="cbClipboardPlay_Checked" Unchecked="cbClipboardPlay_Unchecked">再生する</CheckBox>
+                    <CheckBox x:Name="cbClipboardSaveAudio" Checked="cbClipboardSaveAudio_Checked" Unchecked="cbClipboardSaveAudio_Unchecked">保存する</CheckBox>
+                    <Label Content="保存先(使える命名規則 {yyyyMMdd} {HHmmss} {VoicePreset} {Text})"/>
+                    <DockPanel Margin="0,0,0,5">
+                        <Button x:Name="button" Content="・・・" Click="btnSaveAudioPath_Click" DockPanel.Dock="Right"/>
+                        <TextBox x:Name="txtSaveAudioPath" Text="" DockPanel.Dock="Left" TextChanged="txtSaveAudioPath_TextChanged"/>
+                    </DockPanel>
+                </StackPanel>
+                <StackPanel Margin="0,0,0,5" Orientation="Horizontal">
+                    <StackPanel>
+                        <Button x:Name="btnConnect1" Content="A.I.VOICEに接続" Click="btnConnect1_Click" HorizontalAlignment="Left" Width="100" Margin="0,0,40,0"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="btnConnect2" Content="A.I.VOICE2に接続β" Click="btnConnect2_Click" HorizontalAlignment="Left" Width="100"/>
+                            <Label Content="A.I.VOICE2はβ版になります。" Margin="0,-5,0,0"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <Label Content="再生や保存をする度にA.I.VOICE2 Editorが表示されます" Margin="0,-5,0,0"/>
+                            <Label Content="A.I.VOICE2 Editorのセリフ入力欄を選択した状態にしておいてください" Margin="0,-10,0,0"/>
+                            <Label Content="プリセット名は使えません" Margin="0,-10,0,0"/>
+                            <Label Content="書き出しは「ファイル命名規則で指定」にしておいてください" Margin="0,-10,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
-            <StackPanel Margin="0,5,0,10">
-                <Label Content="音声保存APIのパラメータのエンコード"/>
-                <Label Content="(http://localhost:ポート/saveAudio?text=メッセージ&amp;path=フルパス&amp;preset=プリセット名)"/>
-                <TextBox x:Name="txtSaveAudioEncode" Text="" TextChanged="txtSaveAudioEncode_TextChanged"/>
+            <Border Height="2" Background="#FF616161"/>
+            <StackPanel Margin="0,0,0,5">
+                <Label Content="ログ"/>
+                <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Visible" MinHeight="105" AcceptsReturn="True" IsUndoEnabled="False" HorizontalScrollBarVisibility="Visible" Margin="0,0,0,0"/>
             </StackPanel>
-            <StackPanel Margin="0,5,0,10">
-                <Label Content="クリップボード連携。文字をコピーした時に処理します"/>
-                <CheckBox x:Name="cbClipboardPlay" Checked="cbClipboardPlay_Checked" Unchecked="cbClipboardPlay_Unchecked">再生する</CheckBox>
-                <CheckBox x:Name="cbClipboardSaveAudio" Checked="cbClipboardSaveAudio_Checked" Unchecked="cbClipboardSaveAudio_Unchecked">保存する</CheckBox>
-                <Label Content="保存先(使える命名規則 {yyyyMMdd} {HHmmss} {VoicePreset} {Text})"/>
-                <DockPanel Margin="0,0,0,5">
-                    <Button x:Name="button" Content="・・・" Click="btnSaveAudioPath_Click" DockPanel.Dock="Right"/>
-                    <TextBox x:Name="txtSaveAudioPath" Text="" DockPanel.Dock="Left" TextChanged="txtSaveAudioPath_TextChanged"/>
-                </DockPanel>
-            </StackPanel>
-            <Button x:Name="btnConnect" Content="A.I.VOICEに接続" Click="btnConnect_Click" HorizontalAlignment="Left" Width="100"/>
         </StackPanel>
-        <Border Height="2" Background="#FF616161"/>
-        <StackPanel Margin="0,0,0,5" Height="133">
-            <Label Content="ログ"/>
-            <TextBox x:Name="txtLog" VerticalScrollBarVisibility="Visible" Height="105" AcceptsReturn="True" IsUndoEnabled="False" HorizontalScrollBarVisibility="Visible"/>
-        </StackPanel>
-    </StackPanel>
+    </ScrollViewer>
 </Window>

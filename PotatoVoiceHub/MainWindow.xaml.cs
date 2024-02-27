@@ -3,23 +3,32 @@ using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using System.Windows;
+using System.Windows.Automation;
 
 namespace PotatoVoiceHub
 {
     public partial class MainWindow : Window
     {
-        private TtsControl _ttsControl = new TtsControl();
-        private VoiceHubOption option;
-        private HttpListener listener;
-        private Thread threadClipboard;
-        private string clipboardTextLast = "";
-        private List<string> listLog = new List<string>();
+        //A.I.VOICE1用
+        TtsControl _ttsControlAiv1;
+
+        //A.I.VOICE2用
+        Aiv2EditorElem aiv2EditorElem;
+
+        VoiceHubOption option;
+        HttpListener listener;
+        Thread threadClipboard;
+        string clipboardTextLast = "";
+        List<string> listLog = new List<string>();
 
         public MainWindow()
         {
@@ -31,31 +40,32 @@ namespace PotatoVoiceHub
             readOption();
         }
 
-        private void btnConnect_Click(object sender, RoutedEventArgs e)
+        private void btnConnect1_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 WriteLog("A.I.VOICE 接続");
 
-                var availableHosts = _ttsControl.GetAvailableHostNames();
+                _ttsControlAiv1 = new TtsControl();
+                var availableHosts = _ttsControlAiv1.GetAvailableHostNames();
                 if (availableHosts.Length == 0)
                 {
                     WriteLog("A.I.VOICE のホストが見つかりません");
+                    WriteLog("A.I.VOICE をインストール済みであり、起動出来るか確認してください。");
                     return;
                 }
-                _ttsControl.Initialize(availableHosts[0]);
-                if (_ttsControl.Status == HostStatus.NotRunning)
+                _ttsControlAiv1.Initialize(availableHosts[0]);
+                if (_ttsControlAiv1.Status == HostStatus.NotRunning)
                 {
-                    _ttsControl.StartHost();
+                    _ttsControlAiv1.StartHost();
                 }
-                if (_ttsControl.Status == HostStatus.NotConnected)
+                if (_ttsControlAiv1.Status == HostStatus.NotConnected)
                 {
-                    _ttsControl.Connect();
+                    _ttsControlAiv1.Connect();
                 }
 
                 initHttp();
                 initClipboard();
-                btnConnect.IsEnabled = false;
             }
             catch (Exception exc)
             {
@@ -63,12 +73,46 @@ namespace PotatoVoiceHub
             }
         }
 
+        private void btnConnect2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                WriteLog("A.I.VOICE2 接続");
+
+                if (!initAiv2())
+                {
+                    return;
+                }
+
+                initHttp();
+                initClipboard();
+            }
+            catch (Exception exc)
+            {
+                WriteLog(exc.Message + "\n" + exc.StackTrace);
+            }
+        }
+
+        bool initAiv2()
+        {
+            aiv2EditorElem = new Aiv2EditorElem();
+            if (aiv2EditorElem.GetProcess() == null)
+            {
+                WriteLog("A.I.VOICE2 が見つかりません");
+                WriteLog("A.I.VOICE2 を起動しておいてください。");
+                return false;
+            }
+            return true;
+        }
         private void initHttp()
         {
-            listener = new HttpListener();
-            listener.Prefixes.Add("http://+:" + option.httpPort + "/");
-            listener.Start();
-            startLoop(listener);
+            if (listener == null)
+            {
+                listener = new HttpListener();
+                listener.Prefixes.Add("http://+:" + option.httpPort + "/");
+                listener.Start();
+                startLoop(listener);
+            }
         }
 
         private void startLoop(HttpListener _listener)
@@ -82,6 +126,7 @@ namespace PotatoVoiceHub
             {
                 if (!_listener.IsListening)
                 {
+                    _listener = null;
                     return;
                 }
 
@@ -102,98 +147,250 @@ namespace PotatoVoiceHub
                 return;
             }
 
-            string response;
-            try
+            string response = null;
+
+            // A.I.VOICEの処理
+            if (_ttsControlAiv1 != null)
             {
-                //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
-                if (_ttsControl.Status == HostStatus.NotConnected)
+                try
                 {
-                    _ttsControl.Connect();
+                    //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
+                    if (_ttsControlAiv1.Status == HostStatus.NotConnected)
+                    {
+                        _ttsControlAiv1.Connect();
+                    }
+                    var api = context.Request.Url.AbsolutePath;
+                    switch (api)
+                    {
+                        case "/getStatus":
+                            if (_ttsControlAiv1.Status == HostStatus.Busy)
+                            {
+                                response = "{\"status\":\"busy\"}";
+                            }
+                            else
+                            {
+                                response = "{\"status\":\"idle\"}";
+                            }
+                            break;
+                        case "/saveAudio":
+                            if (_ttsControlAiv1.Status == HostStatus.Busy)
+                            {
+                                response = "{\"status\":\"busy\"}";
+                            }
+                            else
+                            {
+                                var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding(option.saveAudioEncode));
+
+                                if (queryString["preset"] != null)
+                                {
+                                    foreach (var voicePreset in _ttsControlAiv1.VoicePresetNames)
+                                    {
+                                        if (queryString["preset"] == voicePreset)
+                                        {
+                                            _ttsControlAiv1.CurrentVoicePresetName = voicePreset;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                _ttsControlAiv1.Text = queryString["text"];
+
+                                try
+                                {
+                                    _ttsControlAiv1.SaveAudioToFile(queryString["path"]);
+                                }
+                                catch (Exception ex)
+                                {
+                                    WriteLog(ex.Message);
+                                }
+
+                                response = "{\"status\":\"ok\"}";
+                            }
+                            break;
+                        case "/play":
+                            if (_ttsControlAiv1.Status == HostStatus.Busy)
+                            {
+                                response = "{\"status\":\"busy\"}";
+                            }
+                            else
+                            {
+                                var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
+
+                                if (queryString["preset"] != null)
+                                {
+                                    foreach (var voicePreset in _ttsControlAiv1.VoicePresetNames)
+                                    {
+                                        if (queryString["preset"] == voicePreset)
+                                        {
+                                            _ttsControlAiv1.CurrentVoicePresetName = voicePreset;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                _ttsControlAiv1.Text = queryString["text"];
+
+                                _ttsControlAiv1.Play();
+
+                                response = "{\"status\":\"ok\"}";
+                            }
+                            break;
+                        default:
+                            response = "{\"status\":\"\"}";
+                            break;
+                    }
                 }
-                var api = context.Request.Url.AbsolutePath;
-                switch (api)
+                catch (Exception)
                 {
-                    case "/getStatus":
-                        if (_ttsControl.Status == HostStatus.Busy)
-                        {
-                            response = "{\"status\":\"busy\"}";
-                        }
-                        else
-                        {
-                            response = "{\"status\":\"idle\"}";
-                        }
-                        break;
-                    case "/saveAudio":
-                        if (_ttsControl.Status == HostStatus.Busy)
-                        {
-                            response = "{\"status\":\"busy\"}";
-                        }
-                        else
-                        {
-                            var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding(option.saveAudioEncode));
-
-                            if (queryString["preset"] != null)
-                            {
-                                foreach (var voicePreset in _ttsControl.VoicePresetNames)
-                                {
-                                    if (queryString["preset"] == voicePreset)
-                                    {
-                                        _ttsControl.CurrentVoicePresetName = voicePreset;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            _ttsControl.Text = queryString["text"];
-
-                            try
-                            {
-                                _ttsControl.SaveAudioToFile(queryString["path"]);
-                            }
-                            catch (Exception ex)
-                            {
-                                WriteLog(ex.Message);
-                            }
-
-                            response = "{\"status\":\"ok\"}";
-                        }
-                        break;
-                    case "/play":
-                        if (_ttsControl.Status == HostStatus.Busy)
-                        {
-                            response = "{\"status\":\"busy\"}";
-                        }
-                        else
-                        {
-                            var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
-
-                            if (queryString["preset"] != null)
-                            {
-                                foreach (var voicePreset in _ttsControl.VoicePresetNames)
-                                {
-                                    if (queryString["preset"] == voicePreset)
-                                    {
-                                        _ttsControl.CurrentVoicePresetName = voicePreset;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            _ttsControl.Text = queryString["text"];
-
-                            _ttsControl.Play();
-
-                            response = "{\"status\":\"ok\"}";
-                        }
-                        break;
-                    default:
-                        response = "{\"status\":\"\"}";
-                        break;
+                    response = "{\"status\":\"error\"}";
                 }
             }
-            catch (Exception)
+
+            // A.I.VOICE2の処理
+            if (aiv2EditorElem != null)
             {
-                response = "{\"status\":\"error\"}";
+                try
+                {
+                    var api = context.Request.Url.AbsolutePath;
+                    switch (api)
+                    {
+                        case "/getStatus":
+                            if (aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            {
+                                response = "{\"status\":\"busy\"}";
+                            }
+                            else
+                            {
+                                response = "{\"status\":\"idle\"}";
+                            }
+                            break;
+                        case "/saveAudio":
+                            if (aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            {
+                                response = "{\"status\":\"busy\"}";
+                            }
+                            else
+                            {
+                                var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding(option.saveAudioEncode));
+                                // エスケープが必要な文字は消す
+                                var sendKeysText = queryString["text"];
+                                if (sendKeysText == null)
+                                {
+                                    sendKeysText = "";
+                                }
+                                sendKeysText = sendKeysText
+                                    .Replace("{", "").Replace("}", "")
+                                    .Replace("~", "")
+                                    .Replace("+", "")
+                                    .Replace("^", "")
+                                    .Replace("%", "")
+                                    .Replace("\r", "").Replace("\n", "")
+                                    .Replace("\"", "")
+                                    .Replace("(", "").Replace(")", "");
+
+                                //プリセットの機能は無し
+
+                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
+                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+
+                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
+                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
+
+                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
+                                Thread.Sleep(500);
+
+                                try
+                                {
+                                    aiv2EditorElem.GetInvokeAiv2Write1().Invoke();
+
+                                    for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                    {
+                                        if (aiv2EditorElem.GetElemAiv2Write2() != null)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                    if (aiv2EditorElem.GetElemAiv2Write2() == null)
+                                    {
+                                        WriteLog("10秒以内に書き出しを実行ボタンが見つかりませんでした。");
+                                    }
+                                    else
+                                    {
+                                        aiv2EditorElem.GetInvokeAiv2Write2().Invoke();
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    WriteLog(ex.Message);
+                                }
+
+                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+                                response = "{\"status\":\"ok\"}";
+                            }
+                            break;
+                        case "/play":
+                            if (aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            {
+                                response = "{\"status\":\"busy\"}";
+                            }
+                            else
+                            {
+                                var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
+                                // エスケープが必要な文字は消す
+                                var sendKeysText = queryString["text"];
+                                if (sendKeysText == null)
+                                {
+                                    sendKeysText = "";
+                                }
+                                sendKeysText = sendKeysText
+                                    .Replace("{", "").Replace("}", "")
+                                    .Replace("~", "")
+                                    .Replace("+", "")
+                                    .Replace("^", "")
+                                    .Replace("%", "")
+                                    .Replace("\r", "").Replace("\n", "")
+                                    .Replace("\"", "")
+                                    .Replace("(", "").Replace(")", "");
+
+                                //プリセットの機能は無し
+
+                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
+                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+
+                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
+                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
+
+                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
+                                Thread.Sleep(500);
+
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        break;
+                                    }
+                                }
+                                aiv2EditorElem.GetInvokeAiv2Play().Invoke();
+
+                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+                                response = "{\"status\":\"ok\"}";
+                            }
+                            break;
+                        default:
+                            response = "{\"status\":\"\"}";
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                    response = "{\"status\":\"error\"}";
+                }
             }
 
             var buffer = Encoding.UTF8.GetBytes(response);
@@ -216,83 +413,199 @@ namespace PotatoVoiceHub
                 // Windowが生きてる間はポーリングする
                 while (IsVisible)
                 {
-                    try
+                    // A.I.VOICE1の処理
+                    if (_ttsControlAiv1 != null)
                     {
-                        if (_ttsControl.Status == HostStatus.Busy)
+                        try
                         {
-                            Thread.Sleep(100);
-                            continue;
+                            if (_ttsControlAiv1.Status == HostStatus.Busy)
+                            {
+                                Thread.Sleep(100);
+                                continue;
+                            }
+
+                            var clipboardText = "";
+                            Dispatcher.Invoke((() =>
+                            {
+                                clipboardText = Clipboard.GetText().Trim();
+                            }));
+                            if (clipboardText == "" || clipboardText == clipboardTextLast)
+                            {
+                                clipboardTextLast = clipboardText;
+                                Thread.Sleep(100);
+                                continue;
+                            }
+
+                            if (bool.Parse(option.isClipboardSaveAudio))
+                            {
+                                //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
+                                if (_ttsControlAiv1.Status == HostStatus.NotConnected)
+                                {
+                                    _ttsControlAiv1.Connect();
+                                }
+
+                                //ファイル名に使えない文字は消す.円マークまで消える。実装が面倒なので辞める
+                                //foreach (char c in Path.GetInvalidFileNameChars())
+                                //{
+                                //    fileName = fileName.Replace(c.ToString(), "");
+                                //}
+
+                                var fileName = option.saveAudioPath;
+                                fileName = fileName.Replace("{yyyyMMdd}", DateTime.Now.ToString("yyyyMMdd"));
+                                fileName = fileName.Replace("{HHmmss}", DateTime.Now.ToString("HHmmss"));
+                                fileName = fileName.Replace("{VoicePreset}", _ttsControlAiv1.CurrentVoicePresetName);
+                                fileName = fileName.Replace("{Text}", clipboardText.Length > 10 ? clipboardText.Substring(0, 10): clipboardText);
+
+                                if (fileName.Length > 256)
+                                {
+                                    fileName = fileName.Substring(0, 256);
+                                }
+                                new FileInfo(fileName).Directory.Create();
+
+                                _ttsControlAiv1.Text = clipboardText;
+
+                                try
+                                {
+                                    _ttsControlAiv1.SaveAudioToFile(fileName);
+                                }
+                                catch (Exception ex)
+                                {
+                                    WriteLog(ex.Message);
+                                }
+
+                                clipboardTextLast = clipboardText;
+                            }
+
+                            if (bool.Parse(option.isClipboardPlay))
+                            {
+                                //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
+                                if (_ttsControlAiv1.Status == HostStatus.NotConnected)
+                                {
+                                    _ttsControlAiv1.Connect();
+                                }
+
+                                _ttsControlAiv1.Text = clipboardText;
+
+                                _ttsControlAiv1.Play();
+
+                                clipboardTextLast = clipboardText;
+                            }
                         }
-
-                        var clipboardText = "";
-                        Dispatcher.Invoke((() =>
+                        catch (Exception)
                         {
-                            clipboardText = Clipboard.GetText().Trim();
-                        }));
-                        if (clipboardText == "" || clipboardText == clipboardTextLast)
-                        {
-                            clipboardTextLast = clipboardText;
-                            Thread.Sleep(100);
-                            continue;
-                        }
-
-                        if (bool.Parse(option.isClipboardSaveAudio))
-                        {
-                            //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
-                            if (_ttsControl.Status == HostStatus.NotConnected)
-                            {
-                                _ttsControl.Connect();
-                            }
-
-                            //ファイル名に使えない文字は消す.円マークまで消える。実装が面倒なので辞める
-                            //foreach (char c in Path.GetInvalidFileNameChars())
-                            //{
-                            //    fileName = fileName.Replace(c.ToString(), "");
-                            //}
-
-                            var fileName = option.saveAudioPath;
-                            fileName = fileName.Replace("{yyyyMMdd}", DateTime.Now.ToString("yyyyMMdd"));
-                            fileName = fileName.Replace("{HHmmss}", DateTime.Now.ToString("HHmmss"));
-                            fileName = fileName.Replace("{VoicePreset}", _ttsControl.CurrentVoicePresetName);
-                            fileName = fileName.Replace("{Text}", clipboardText.Length > 10 ? clipboardText.Substring(0, 10): clipboardText);
-
-                            if (fileName.Length > 256)
-                            {
-                                fileName = fileName.Substring(0, 256);
-                            }
-                            new FileInfo(fileName).Directory.Create();
-
-                            _ttsControl.Text = clipboardText;
-
-                            try
-                            {
-                                _ttsControl.SaveAudioToFile(fileName);
-                            }
-                            catch (Exception ex)
-                            {
-                                WriteLog(ex.Message);
-                            }
-
-                            clipboardTextLast = clipboardText;
-                        }
-
-                        if (bool.Parse(option.isClipboardPlay))
-                        {
-                            //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
-                            if (_ttsControl.Status == HostStatus.NotConnected)
-                            {
-                                _ttsControl.Connect();
-                            }
-
-                            _ttsControl.Text = clipboardText;
-
-                            _ttsControl.Play();
-
-                            clipboardTextLast = clipboardText;
                         }
                     }
-                    catch (Exception)
+
+                    // A.I.VOICE2の処理
+                    if (aiv2EditorElem != null)
                     {
+                        try
+                        {
+                            if (aiv2EditorElem.GetElemAiv2Play() == null || aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            {
+                                Thread.Sleep(100);
+                                continue;
+                            }
+
+                            var clipboardText = "";
+                            Dispatcher.Invoke((() =>
+                            {
+                                clipboardText = Clipboard.GetText().Trim();
+                            }));
+                            if (clipboardText == "" || clipboardText == clipboardTextLast)
+                            {
+                                clipboardTextLast = clipboardText;
+                                Thread.Sleep(100);
+                                continue;
+                            }
+
+                            // エスケープが必要な文字は消す
+                            var sendKeysText = clipboardText;
+                            if (sendKeysText == null)
+                            {
+                                sendKeysText = "";
+                            }
+                            sendKeysText = sendKeysText
+                                .Replace("{", "").Replace("}", "")
+                                .Replace("~", "")
+                                .Replace("+", "")
+                                .Replace("^", "")
+                                .Replace("%", "")
+                                .Replace("\r", "").Replace("\n", "")
+                                .Replace("\"", "")
+                                .Replace("(", "").Replace(")", "");
+
+                            if (bool.Parse(option.isClipboardSaveAudio))
+                            {
+                                //ファイル名はA.I.VOICE2が決めるため処理しない
+
+                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
+                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+
+                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
+                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
+
+                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
+                                Thread.Sleep(500);
+
+                                aiv2EditorElem.GetInvokeAiv2Write1().Invoke();
+
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Write2() != null)
+                                    {
+                                        break;
+                                    }
+                                }
+                                if (aiv2EditorElem.GetElemAiv2Write2() == null)
+                                {
+                                    WriteLog("10秒以内に書き出しを実行ボタンが見つかりませんでした。");
+                                }
+                                else
+                                {
+                                    aiv2EditorElem.GetInvokeAiv2Write2().Invoke();
+                                }
+
+                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+                                clipboardTextLast = clipboardText;
+                            }
+
+                            if (bool.Parse(option.isClipboardPlay))
+                            {
+                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
+                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+
+                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
+                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
+
+                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
+                                Thread.Sleep(500);
+
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                {
+                                    try
+                                    {
+                                        aiv2EditorElem.GetInvokeAiv2Play().Invoke();
+                                        break;
+                                    }
+                                    catch (Exception)
+                                    {
+                                    }
+                                }
+
+                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+                                clipboardTextLast = clipboardText;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                        }
                     }
 
                     Thread.Sleep(100);

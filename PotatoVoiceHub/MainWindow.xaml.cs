@@ -296,10 +296,28 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
                                 System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
                                 System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+
+                                //再生ボタンが押せなくなるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+                                {
+                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        Thread.Sleep(10);
+                                        continue;
+                                    }
+                                    break;
+                                }
+
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
 
-                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
-                                Thread.Sleep(500);
+                                //再生ボタンが押せるようになるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        break;
+                                    }
+                                }
 
                                 try
                                 {
@@ -363,11 +381,21 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
                                 System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
                                 System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+
+                                //再生ボタンが押せなくなるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+                                {
+                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        Thread.Sleep(10);
+                                        continue;
+                                    }
+                                    break;
+                                }
+
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
 
-                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
-                                Thread.Sleep(500);
-
+                                //再生ボタンが押せるようになるのを待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
                                 {
                                     if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
@@ -378,6 +406,18 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetInvokeAiv2Play().Invoke();
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+                                //再生ボタンが停止ボタンになる前に次のメッセージが来ると、メッセージを上書きして停止ボタンを押してしまうので、
+                                //再生後は停止ボタンになるまで待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Play().Current.Name == "再生")
+                                    {
+                                        Thread.Sleep(10);
+                                        continue;
+                                    }
+                                    break;
+                                }
 
                                 response = "{\"status\":\"ok\"}";
                             }
@@ -545,11 +585,28 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
                                 System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
                                 System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+
+                                //再生ボタンが押せなくなるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+                                {
+                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        Thread.Sleep(10);
+                                        continue;
+                                    }
+                                    break;
+                                }
+
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
 
-                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
-                                Thread.Sleep(500);
-
+                                //再生ボタンが押せるようになるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        break;
+                                    }
+                                }
                                 aiv2EditorElem.GetInvokeAiv2Write1().Invoke();
 
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
@@ -581,10 +638,28 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
                                 System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
                                 System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+
+                                //再生ボタンが押せなくなるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+                                {
+                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        Thread.Sleep(10);
+                                        continue;
+                                    }
+                                    break;
+                                }
+
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
 
-                                //ボタン押すのが早すぎると、ボタンがスカるのでちょっと待つ
-                                Thread.Sleep(500);
+                                //再生ボタンが押せるようになるのを待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                                    {
+                                        break;
+                                    }
+                                }
 
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
                                 {
@@ -599,6 +674,18 @@ namespace PotatoVoiceHub
                                 }
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+                                //再生ボタンが停止ボタンになる前に次のメッセージが来ると、メッセージを上書きして停止ボタンを押してしまうので、
+                                //再生後は停止ボタンになるまで待つ
+                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+                                {
+                                    if (aiv2EditorElem.GetElemAiv2Play().Current.Name == "再生")
+                                    {
+                                        Thread.Sleep(10);
+                                        continue;
+                                    }
+                                    break;
+                                }
 
                                 clipboardTextLast = clipboardText;
                             }

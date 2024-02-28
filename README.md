@@ -48,7 +48,22 @@ PotatoVoiceHub と VoiceroidTalkPlusReceiverHub のポートの数字は同じ�
 →AIVoiceと連携して、コメントに音声がつきます。  
 ※あらかじめ、PotateVoiceHub経由でAIVoice Editorを起動しておいてください。  
 
+#A.I.Voice2について
+A.I.Voice2に接続βボタンは仮対応になります。
+A.I.Voice(無印)と同じように動作するように、なるべくしましたが
+公式APIが無いため色々と制限があります。
+
+##A.I.Voice2に接続βの注意事項
+1.ボタンを押すと「A.I.VOICE2 Editor」から始まるウィンドウを探します。
+　なので予めA.I.VOICE2 Editorを起動しておいてください。
+2.棒読みちゃんと連携している場合は、棒読みちゃんがテキストを再生するとPotatoVoiceHubが呼ばれ、
+　A.I.VOICE2 Editorを操作して読み上げます。
+　なのでPotatoVoiceHubがA.I.VOICE2 Editorを操作中にPCを触ると正常に動作しないかもしれません。
+
 # リリースノート
+
+## PotatoVoiceHub_v2024.02.28
+A.I.Voice2 Editorでメッセージがいっぱい来た時に読まれなくなるバグを修正しました。
 
 ## PotatoVoiceHub_v2024.02.27
 A.I.Voice2 Editorに仮対応

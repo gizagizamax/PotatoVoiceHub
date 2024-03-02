@@ -7,5 +7,6 @@
         public string saveAudioEncode;
         public string isClipboardPlay;
         public string isClipboardSaveAudio;
+        public string aiv2SendKeysSleep;
     }
 }

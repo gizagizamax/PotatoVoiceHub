@@ -287,12 +287,13 @@ namespace PotatoVoiceHub
                                     .Replace("\r", "").Replace("\n", "")
                                     .Replace("\"", "")
                                     .Replace("(", "").Replace(")", "");
-                                //句読点があるとA.I.VOICE2が止まるのでピリオドにする
+                                //句読点があるとA.I.VOICE2が止まるのでカンマにする
                                 sendKeysText = sendKeysText
-                                    .Replace("。", ". ").Replace("｡", ". ")
-                                    .Replace("、", ". ").Replace("､", ". ")
-                                    .Replace("？", ". ").Replace("?", ". ")
-                                    .Replace("！", ". ").Replace("!", ". ");
+                                    .Replace("。", ", ").Replace("｡", ", ")
+                                    .Replace("、", ", ").Replace("､", ", ")
+                                    .Replace("？", ", ").Replace("?", ", ")
+                                    .Replace("！", ", ").Replace("!", ", ")
+                                    .Replace("．", ", ").Replace(".", ", ");
 
                                 //プリセットの機能は無し
 
@@ -300,29 +301,9 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 System.Windows.Forms.SendKeys.SendWait("^a");
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
-
-                                //再生ボタンが押せなくなるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
-                                {
-                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        Thread.Sleep(10);
-                                        continue;
-                                    }
-                                    break;
-                                }
-
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-
-                                //再生ボタンが押せるようになるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                {
-                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        break;
-                                    }
-                                }
+                                //再生ボタンが押せるようになるまで待つ
+                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
 
                                 try
                                 {
@@ -377,12 +358,13 @@ namespace PotatoVoiceHub
                                     .Replace("\r", "").Replace("\n", "")
                                     .Replace("\"", "")
                                     .Replace("(", "").Replace(")", "");
-                                //句読点があるとA.I.VOICE2が止まるのでピリオドにする
+                                //句読点があるとA.I.VOICE2が止まるのでカンマにする
                                 sendKeysText = sendKeysText
-                                    .Replace("。", ". ").Replace("｡", ". ")
-                                    .Replace("、", ". ").Replace("､", ". ")
-                                    .Replace("？", ". ").Replace("?", ". ")
-                                    .Replace("！", ". ").Replace("!", ". ");
+                                    .Replace("。", ", ").Replace("｡", ", ")
+                                    .Replace("、", ", ").Replace("､", ", ")
+                                    .Replace("？", ", ").Replace("?", ", ")
+                                    .Replace("！", ", ").Replace("!", ", ")
+                                    .Replace("．", ", ").Replace(".", ", ");
 
                                 //プリセットの機能は無し
 
@@ -390,29 +372,9 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 System.Windows.Forms.SendKeys.SendWait("^a");
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
-
-                                //再生ボタンが押せなくなるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
-                                {
-                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        Thread.Sleep(10);
-                                        continue;
-                                    }
-                                    break;
-                                }
-
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-
-                                //再生ボタンが押せるようになるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                {
-                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        break;
-                                    }
-                                }
+                                //再生ボタンが押せるようになるまで待つ
+                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
                                 aiv2EditorElem.GetInvokeAiv2Play().Invoke();
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
@@ -602,12 +564,13 @@ namespace PotatoVoiceHub
                                 .Replace("\r", "").Replace("\n", "")
                                 .Replace("\"", "")
                                 .Replace("(", "").Replace(")", "");
-                            //句読点があるとA.I.VOICE2が止まるのでピリオドにする
+                            //句読点があるとA.I.VOICE2が止まるのでカンマにする
                             sendKeysText = sendKeysText
-                                .Replace("。", ". ").Replace("｡", ". ")
-                                .Replace("、", ". ").Replace("､", ". ")
-                                .Replace("？", ". ").Replace("?", ". ")
-                                .Replace("！", ". ").Replace("!", ". ");
+                                .Replace("。", ", ").Replace("｡", ", ")
+                                .Replace("、", ", ").Replace("､", ", ")
+                                .Replace("？", ", ").Replace("?", ", ")
+                                .Replace("！", ", ").Replace("!", ", ")
+                                .Replace("．", ", ").Replace(".", ", ");
 
                             if (bool.Parse(option.isClipboardSaveAudio))
                             {
@@ -617,29 +580,9 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 System.Windows.Forms.SendKeys.SendWait("^a");
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
-
-                                //再生ボタンが押せなくなるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
-                                {
-                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        Thread.Sleep(10);
-                                        continue;
-                                    }
-                                    break;
-                                }
-
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-
-                                //再生ボタンが押せるようになるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                {
-                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        break;
-                                    }
-                                }
+                                //再生ボタンが押せるようになるまで待つ
+                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
                                 aiv2EditorElem.GetInvokeAiv2Write1().Invoke();
 
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
@@ -669,41 +612,10 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 System.Windows.Forms.SendKeys.SendWait("^a");
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
-
-                                //再生ボタンが押せなくなるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
-                                {
-                                    if (!aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        Thread.Sleep(10);
-                                        continue;
-                                    }
-                                    break;
-                                }
-
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-
-                                //再生ボタンが押せるようになるのを待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                {
-                                    if (aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
-                                    {
-                                        break;
-                                    }
-                                }
-
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                {
-                                    try
-                                    {
-                                        aiv2EditorElem.GetInvokeAiv2Play().Invoke();
-                                        break;
-                                    }
-                                    catch (Exception)
-                                    {
-                                    }
-                                }
+                                //再生ボタンが押せるようになるまで待つ
+                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
+                                aiv2EditorElem.GetInvokeAiv2Play().Invoke();
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
 
@@ -766,6 +678,7 @@ namespace PotatoVoiceHub
                 txtSaveAudioPath.Text = option.saveAudioPath;
                 txtHttpPort.Text = option.httpPort;
                 txtSaveAudioEncode.Text = option.saveAudioEncode;
+                txtAiv2SendKeysSleep.Text = option.aiv2SendKeysSleep;
                 cbClipboardPlay.IsChecked = bool.Parse(option.isClipboardPlay);
                 cbClipboardSaveAudio.IsChecked = bool.Parse(option.isClipboardSaveAudio);
             }
@@ -784,6 +697,11 @@ namespace PotatoVoiceHub
                 string.IsNullOrEmpty(option.httpPort) ?
                 "2119" :
                 option.httpPort;
+
+            txtAiv2SendKeysSleep.Text =
+                string.IsNullOrEmpty(option.aiv2SendKeysSleep) ?
+                "1000" :
+                option.aiv2SendKeysSleep;
 
             txtSaveAudioEncode.Text =
                 string.IsNullOrEmpty(option.saveAudioEncode) ?
@@ -814,6 +732,19 @@ namespace PotatoVoiceHub
         private void txtHttpPort_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             option.httpPort = txtHttpPort.Text;
+            saveOption();
+        }
+
+        private void txtAiv2SendKeysSleep_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            try
+            {
+                option.aiv2SendKeysSleep = int.Parse(txtAiv2SendKeysSleep.Text).ToString();
+            }
+            catch (Exception)
+            {
+                option.aiv2SendKeysSleep = "1000";
+            }
             saveOption();
         }
 

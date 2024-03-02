@@ -86,22 +86,29 @@ namespace Plugin_PotatoVoiceHub
                     text = e.TalkTask.SourceText;
                 }
 
-                string html;
-                using (var st = WebRequest.Create("http://localhost:" + pluginPotatoVoiceOption.HttpPort + "/play?text=" + HttpUtility.UrlEncode(text)).GetResponse().GetResponseStream())
+                try
                 {
-                    using (var sr = new StreamReader(st, Encoding.UTF8))
+                    string html;
+                    using (var st = WebRequest.Create("http://localhost:" + pluginPotatoVoiceOption.HttpPort + "/play?text=" + HttpUtility.UrlEncode(text)).GetResponse().GetResponseStream())
                     {
-                        html = sr.ReadToEnd();
+                        using (var sr = new StreamReader(st, Encoding.UTF8))
+                        {
+                            html = sr.ReadToEnd();
+                        }
+                    }
+
+                    form1.writeLog(html);
+
+                    var json = new Parser(html);
+                    if (json["status"].String == "busy")
+                    {
+                        Thread.Sleep(1);
+                        continue;
                     }
                 }
-
-                form1.writeLog(html);
-
-                var json = new Parser(html);
-                if (json["status"].String == "busy")
+                catch (Exception)
                 {
-                    Thread.Sleep(1);
-                    continue;
+                    //PotatoVoiceHubに繋がらなかったら、まだ起動してないのでスキップする
                 }
                 break;
             }

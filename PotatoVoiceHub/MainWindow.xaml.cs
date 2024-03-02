@@ -287,15 +287,19 @@ namespace PotatoVoiceHub
                                     .Replace("\r", "").Replace("\n", "")
                                     .Replace("\"", "")
                                     .Replace("(", "").Replace(")", "");
+                                //句読点があるとA.I.VOICE2が止まるのでピリオドにする
+                                sendKeysText = sendKeysText
+                                    .Replace("。", ". ")
+                                    .Replace("、", ". ")
+                                    .Replace("？", ". ");
 
                                 //プリセットの機能は無し
 
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
-                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
-                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
 
                                 //再生ボタンが押せなくなるのを待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
@@ -372,15 +376,19 @@ namespace PotatoVoiceHub
                                     .Replace("\r", "").Replace("\n", "")
                                     .Replace("\"", "")
                                     .Replace("(", "").Replace(")", "");
+                                //句読点があるとA.I.VOICE2が止まるのでピリオドにする
+                                sendKeysText = sendKeysText
+                                    .Replace("。", ". ")
+                                    .Replace("、", ". ")
+                                    .Replace("？", ". ");
 
                                 //プリセットの機能は無し
 
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
-                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
-                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
 
                                 //再生ボタンが押せなくなるのを待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
@@ -446,7 +454,13 @@ namespace PotatoVoiceHub
                 return;
             }
 
-            clipboardTextLast = Clipboard.GetText().Trim();
+            try
+            {
+                clipboardTextLast = Clipboard.GetText().Trim();
+            }
+            catch (Exception)
+            {
+            }
 
             threadClipboard = new Thread(new ThreadStart(() =>
             {
@@ -467,7 +481,13 @@ namespace PotatoVoiceHub
                             var clipboardText = "";
                             Dispatcher.Invoke((() =>
                             {
-                                clipboardText = Clipboard.GetText().Trim();
+                                try
+                                {
+                                    clipboardText = Clipboard.GetText().Trim();
+                                }
+                                catch (Exception)
+                                {
+                                }
                             }));
                             if (clipboardText == "" || clipboardText == clipboardTextLast)
                             {
@@ -550,7 +570,13 @@ namespace PotatoVoiceHub
                             var clipboardText = "";
                             Dispatcher.Invoke((() =>
                             {
-                                clipboardText = Clipboard.GetText().Trim();
+                                try
+                                {
+                                    clipboardText = Clipboard.GetText().Trim();
+                                }
+                                catch (Exception)
+                                {
+                                }
                             }));
                             if (clipboardText == "" || clipboardText == clipboardTextLast)
                             {
@@ -574,6 +600,11 @@ namespace PotatoVoiceHub
                                 .Replace("\r", "").Replace("\n", "")
                                 .Replace("\"", "")
                                 .Replace("(", "").Replace(")", "");
+                            //句読点があるとA.I.VOICE2が止まるのでピリオドにする
+                            sendKeysText = sendKeysText
+                                .Replace("。", ". ")
+                                .Replace("、", ". ")
+                                .Replace("？", ". ");
 
                             if (bool.Parse(option.isClipboardSaveAudio))
                             {
@@ -582,9 +613,8 @@ namespace PotatoVoiceHub
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
-                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
-                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
 
                                 //再生ボタンが押せなくなるのを待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
@@ -635,9 +665,8 @@ namespace PotatoVoiceHub
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
-                                System.Windows.Forms.SendKeys.SendWait("^{HOME}");   // Move to start of control
-                                System.Windows.Forms.SendKeys.SendWait("^+{END}");   // Select everything
-                                System.Windows.Forms.SendKeys.SendWait("{DEL}");     // Delete selection
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                System.Windows.Forms.SendKeys.SendWait("{DEL}");
 
                                 //再生ボタンが押せなくなるのを待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)

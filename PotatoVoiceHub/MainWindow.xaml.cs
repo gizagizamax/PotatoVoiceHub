@@ -289,9 +289,10 @@ namespace PotatoVoiceHub
                                     .Replace("(", "").Replace(")", "");
                                 //句読点があるとA.I.VOICE2が止まるのでピリオドにする
                                 sendKeysText = sendKeysText
-                                    .Replace("。", ". ")
-                                    .Replace("、", ". ")
-                                    .Replace("？", ". ");
+                                    .Replace("。", ". ").Replace("｡", ". ")
+                                    .Replace("、", ". ").Replace("､", ". ")
+                                    .Replace("？", ". ").Replace("?", ". ")
+                                    .Replace("！", ". ").Replace("!", ". ");
 
                                 //プリセットの機能は無し
 
@@ -378,9 +379,10 @@ namespace PotatoVoiceHub
                                     .Replace("(", "").Replace(")", "");
                                 //句読点があるとA.I.VOICE2が止まるのでピリオドにする
                                 sendKeysText = sendKeysText
-                                    .Replace("。", ". ")
-                                    .Replace("、", ". ")
-                                    .Replace("？", ". ");
+                                    .Replace("。", ". ").Replace("｡", ". ")
+                                    .Replace("、", ". ").Replace("､", ". ")
+                                    .Replace("？", ". ").Replace("?", ". ")
+                                    .Replace("！", ". ").Replace("!", ". ");
 
                                 //プリセットの機能は無し
 
@@ -602,9 +604,10 @@ namespace PotatoVoiceHub
                                 .Replace("(", "").Replace(")", "");
                             //句読点があるとA.I.VOICE2が止まるのでピリオドにする
                             sendKeysText = sendKeysText
-                                .Replace("。", ". ")
-                                .Replace("、", ". ")
-                                .Replace("？", ". ");
+                                .Replace("。", ". ").Replace("｡", ". ")
+                                .Replace("、", ". ").Replace("､", ". ")
+                                .Replace("？", ". ").Replace("?", ". ")
+                                .Replace("！", ". ").Replace("!", ". ");
 
                             if (bool.Parse(option.isClipboardSaveAudio))
                             {

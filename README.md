@@ -62,6 +62,9 @@ A.I.Voice(無印)と同じように動作するように、なるべくしまし
 
 # リリースノート  
 
+## PotatoVoiceHub_v2024.03.2.2
+A.I.Voice2 Editorで「。、？！」(半角全角共に)を「. 」へ置換する処理を追加。  
+
 ## PotatoVoiceHub_v2024.03.2
 A.I.Voice2 Editorは句読点があると再生が止まってしまう仕様？があるため「。、？」を「. 」へ置換する処理を追加。  
 Ctrl+Home→Ctrl+Shift+End→Delでメッセージを消していたをCtrl+A→Delに変更。  

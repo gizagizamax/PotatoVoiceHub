@@ -45,6 +45,14 @@
                                     <Label Content="絵文字だけのメッセージを読み上げた時に A.I.Voice2 Editor が落ちたりします。" Margin="0,-10,0,0"/>
                                     <TextBox x:Name="txtAiv2SendKeysSleep" Text="" TextChanged="txtAiv2SendKeysSleep_TextChanged"/>
                                 </StackPanel>
+                                <Border Height="1" Background="#FF616161"/>
+                                <StackPanel Margin="0,5,0,10">
+                                    <Label Content="テキスト削除のリトライ回数" Margin="0,0,0,0"/>
+                                    <TextBox x:Name="txtAiv2DelCount" Text="" TextChanged="txtAiv2DelCount_TextChanged" DockPanel.Dock="Left"/>
+                                    <Label Content="A.I.VOICE2が重くなると同じセリフを読んでしまうことがあります。" Margin="0,0,0,0"/>
+                                    <Label Content="値を増やすと事象が減りますが、読み始めるのに時間がかかります。" Margin="0,-10,0,0"/>
+                                    <Label Content="時間が気にならないのであれば「100」くらいにすると精度はかなり上がります。" Margin="0,-10,0,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </TabItem>

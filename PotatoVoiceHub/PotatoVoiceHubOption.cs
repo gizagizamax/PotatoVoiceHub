@@ -8,5 +8,6 @@
         public string isClipboardPlay;
         public string isClipboardSaveAudio;
         public string aiv2SendKeysSleep;
+        public string aiv2DelCount;
     }
 }

@@ -302,7 +302,8 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                for (int i = 0; i < 100; i++)
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
@@ -376,7 +377,8 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                for (int i = 0; i < 100; i++)
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
@@ -587,7 +589,8 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                for (int i = 0; i < 100; i++)
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
@@ -622,7 +625,8 @@ namespace PotatoVoiceHub
                                 aiv2EditorElem.GetElemMainWindow().SetFocus();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                for (int i = 0; i < 100; i++)
+                                System.Windows.Forms.SendKeys.SendWait("^a");
+                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
@@ -691,6 +695,7 @@ namespace PotatoVoiceHub
                 txtHttpPort.Text = option.httpPort;
                 txtSaveAudioEncode.Text = option.saveAudioEncode;
                 txtAiv2SendKeysSleep.Text = option.aiv2SendKeysSleep;
+                txtAiv2DelCount.Text = option.aiv2DelCount;
                 cbClipboardPlay.IsChecked = bool.Parse(option.isClipboardPlay);
                 cbClipboardSaveAudio.IsChecked = bool.Parse(option.isClipboardSaveAudio);
             }
@@ -714,6 +719,11 @@ namespace PotatoVoiceHub
                 string.IsNullOrEmpty(option.aiv2SendKeysSleep) ?
                 "1000" :
                 option.aiv2SendKeysSleep;
+
+            txtAiv2DelCount.Text =
+                string.IsNullOrEmpty(option.aiv2DelCount) ?
+                "10" :
+                option.aiv2DelCount;
 
             txtSaveAudioEncode.Text =
                 string.IsNullOrEmpty(option.saveAudioEncode) ?
@@ -756,6 +766,19 @@ namespace PotatoVoiceHub
             catch (Exception)
             {
                 option.aiv2SendKeysSleep = "1000";
+            }
+            saveOption();
+        }
+
+        private void txtAiv2DelCount_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            try
+            {
+                option.aiv2DelCount = int.Parse(txtAiv2DelCount.Text).ToString();
+            }
+            catch (Exception)
+            {
+                option.aiv2DelCount = "10";
             }
             saveOption();
         }

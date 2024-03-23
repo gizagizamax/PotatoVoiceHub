@@ -3,16 +3,12 @@ using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using System.Windows;
-using System.Windows.Automation;
 
 namespace PotatoVoiceHub
 {
@@ -255,7 +251,7 @@ namespace PotatoVoiceHub
                     switch (api)
                     {
                         case "/getStatus":
-                            if (aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            if (!aiv2EditorElem.IsEnabledPlay())
                             {
                                 response = "{\"status\":\"busy\"}";
                             }
@@ -265,7 +261,7 @@ namespace PotatoVoiceHub
                             }
                             break;
                         case "/saveAudio":
-                            if (aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            if (!aiv2EditorElem.IsEnabledPlay())
                             {
                                 response = "{\"status\":\"busy\"}";
                             }
@@ -298,8 +294,8 @@ namespace PotatoVoiceHub
                                 //プリセットの機能は無し
 
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetProcess().Handle);
-                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
+                                aiv2EditorElem.SetFocusMainWindow();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
@@ -311,7 +307,7 @@ namespace PotatoVoiceHub
 
                                 try
                                 {
-                                    aiv2EditorElem.GetInvokeAiv2Write1().Invoke();
+                                    aiv2EditorElem.InvokeWrite1();
 
                                     for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
                                     {
@@ -326,7 +322,7 @@ namespace PotatoVoiceHub
                                     }
                                     else
                                     {
-                                        aiv2EditorElem.GetInvokeAiv2Write2().Invoke();
+                                        aiv2EditorElem.InvokeWrite2();
                                     }
                                 }
                                 catch (Exception ex)
@@ -340,7 +336,7 @@ namespace PotatoVoiceHub
                             }
                             break;
                         case "/play":
-                            if (aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            if (!aiv2EditorElem.IsEnabledPlay())
                             {
                                 response = "{\"status\":\"busy\"}";
                             }
@@ -373,8 +369,8 @@ namespace PotatoVoiceHub
                                 //プリセットの機能は無し
 
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetProcess().Handle);
-                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
+                                aiv2EditorElem.SetFocusMainWindow();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
@@ -383,7 +379,7 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-                                aiv2EditorElem.GetInvokeAiv2Play().Invoke();
+                                aiv2EditorElem.InvokePlay();
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
 
@@ -391,7 +387,7 @@ namespace PotatoVoiceHub
                                 //再生後は停止ボタンになるまで待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
                                 {
-                                    if (aiv2EditorElem.GetElemAiv2Play().Current.Name == "再生")
+                                    if (aiv2EditorElem.IsEnabledPlay())
                                     {
                                         Thread.Sleep(10);
                                         continue;
@@ -533,7 +529,7 @@ namespace PotatoVoiceHub
                     {
                         try
                         {
-                            if (aiv2EditorElem.GetElemAiv2Play() == null || aiv2EditorElem.GetElemAiv2Play().Current.Name != "再生" || !aiv2EditorElem.GetElemAiv2Play().Current.IsEnabled)
+                            if (!aiv2EditorElem.IsEnabledPlay())
                             {
                                 Thread.Sleep(100);
                                 continue;
@@ -585,8 +581,8 @@ namespace PotatoVoiceHub
                                 //ファイル名はA.I.VOICE2が決めるため処理しない
 
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetProcess().Handle);
-                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
+                                aiv2EditorElem.SetFocusMainWindow();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
@@ -595,7 +591,7 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-                                aiv2EditorElem.GetInvokeAiv2Write1().Invoke();
+                                aiv2EditorElem.InvokeWrite1();
 
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
                                 {
@@ -610,7 +606,7 @@ namespace PotatoVoiceHub
                                 }
                                 else
                                 {
-                                    aiv2EditorElem.GetInvokeAiv2Write2().Invoke();
+                                    aiv2EditorElem.InvokeWrite2();
                                 }
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
@@ -621,8 +617,8 @@ namespace PotatoVoiceHub
                             if (bool.Parse(option.isClipboardPlay))
                             {
                                 var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetProcess().Handle);
-                                aiv2EditorElem.GetElemMainWindow().SetFocus();
+                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
+                                aiv2EditorElem.SetFocusMainWindow();
 
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
@@ -631,7 +627,7 @@ namespace PotatoVoiceHub
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-                                aiv2EditorElem.GetInvokeAiv2Play().Invoke();
+                                aiv2EditorElem.InvokePlay();
 
                                 Win32Api.SetForegroundWindow(foregroundWindowHwd);
 
@@ -639,7 +635,7 @@ namespace PotatoVoiceHub
                                 //再生後は停止ボタンになるまで待つ
                                 for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
                                 {
-                                    if (aiv2EditorElem.GetElemAiv2Play().Current.Name == "再生")
+                                    if (aiv2EditorElem.IsEnabledPlay())
                                     {
                                         Thread.Sleep(10);
                                         continue;

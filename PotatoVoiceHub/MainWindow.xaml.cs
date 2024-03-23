@@ -300,7 +300,10 @@ namespace PotatoVoiceHub
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
                                 for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
+                                {
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
+                                    Thread.Sleep(1);
+                                }
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
@@ -375,7 +378,10 @@ namespace PotatoVoiceHub
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
                                 for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
+                                {
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
+                                    Thread.Sleep(1);
+                                }
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
@@ -587,7 +593,10 @@ namespace PotatoVoiceHub
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
                                 for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
+                                {
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
+                                    Thread.Sleep(1);
+                                }
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
@@ -623,7 +632,10 @@ namespace PotatoVoiceHub
                                 // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
                                 System.Windows.Forms.SendKeys.SendWait("^a");
                                 for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
+                                {
                                     System.Windows.Forms.SendKeys.SendWait("^a^x");
+                                    Thread.Sleep(1);
+                                }
                                 System.Windows.Forms.SendKeys.SendWait(sendKeysText);
                                 //再生ボタンが押せるようになるまで待つ
                                 Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));

@@ -159,15 +159,9 @@ namespace PotatoVoiceHub
                     switch (api)
                     {
                         case "/getStatus":
-                            if (_ttsControlAiv1.Status == HostStatus.Busy)
-                            {
-                                response = "{\"status\":\"busy\"}";
-                            }
-                            else
-                            {
-                                response = "{\"status\":\"idle\"}";
-                            }
+                            response = _ttsControlAiv1.Status == HostStatus.Busy ? "{\"status\":\"busy\"}" : "{\"status\":\"idle\"}";
                             break;
+
                         case "/saveAudio":
                             if (_ttsControlAiv1.Status == HostStatus.Busy)
                             {
@@ -203,6 +197,7 @@ namespace PotatoVoiceHub
                                 response = "{\"status\":\"ok\"}";
                             }
                             break;
+
                         case "/play":
                             if (_ttsControlAiv1.Status == HostStatus.Busy)
                             {
@@ -225,12 +220,12 @@ namespace PotatoVoiceHub
                                 }
 
                                 _ttsControlAiv1.Text = queryString["text"];
-
                                 _ttsControlAiv1.Play();
 
                                 response = "{\"status\":\"ok\"}";
                             }
                             break;
+
                         default:
                             response = "{\"status\":\"\"}";
                             break;
@@ -251,15 +246,9 @@ namespace PotatoVoiceHub
                     switch (api)
                     {
                         case "/getStatus":
-                            if (!aiv2EditorElem.IsEnabledPlay())
-                            {
-                                response = "{\"status\":\"busy\"}";
-                            }
-                            else
-                            {
-                                response = "{\"status\":\"idle\"}";
-                            }
+                            response = !aiv2EditorElem.IsEnabledPlay() ? "{\"status\":\"busy\"}" : "{\"status\":\"idle\"}";
                             break;
+
                         case "/saveAudio":
                             if (!aiv2EditorElem.IsEnabledPlay())
                             {
@@ -268,76 +257,16 @@ namespace PotatoVoiceHub
                             else
                             {
                                 var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query, Encoding.GetEncoding(option.saveAudioEncode));
-                                // エスケープが必要な文字は消す
-                                var sendKeysText = queryString["text"];
-                                if (sendKeysText == null)
-                                {
-                                    sendKeysText = "";
-                                }
-                                sendKeysText = sendKeysText
-                                    .Replace("{", "").Replace("}", "")
-                                    .Replace("~", "")
-                                    .Replace("+", "")
-                                    .Replace("^", "")
-                                    .Replace("%", "")
-                                    .Replace("\r", "").Replace("\n", "")
-                                    .Replace("\"", "")
-                                    .Replace("(", "").Replace(")", "");
-                                //句読点があるとA.I.VOICE2が止まるのでカンマにする
-                                sendKeysText = sendKeysText
-                                    .Replace("。", ", ").Replace("｡", ", ")
-                                    .Replace("、", ", ").Replace("､", ", ")
-                                    .Replace("？", ", ").Replace("?", ", ")
-                                    .Replace("！", ", ").Replace("!", ", ")
-                                    .Replace("．", ", ").Replace(".", ", ");
+                                var sendKeysText = SanitizeText(queryString["text"]);
 
                                 //プリセットの機能は無し
 
-                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
-                                aiv2EditorElem.SetFocusMainWindow();
-
-                                // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                System.Windows.Forms.SendKeys.SendWait("^a");
-                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
-                                {
-                                    System.Windows.Forms.SendKeys.SendWait("^a^x");
-                                    Thread.Sleep(1);
-                                }
-                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-                                //再生ボタンが押せるようになるまで待つ
-                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-
-                                try
-                                {
-                                    aiv2EditorElem.InvokeWrite1();
-
-                                    for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                    {
-                                        if (aiv2EditorElem.GetElemAiv2Write2() != null)
-                                        {
-                                            break;
-                                        }
-                                    }
-                                    if (aiv2EditorElem.GetElemAiv2Write2() == null)
-                                    {
-                                        WriteLog("10秒以内に書き出しを実行ボタンが見つかりませんでした。");
-                                    }
-                                    else
-                                    {
-                                        aiv2EditorElem.InvokeWrite2();
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    WriteLog(ex.Message);
-                                }
-
-                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
+                                SaveAudioAiv2(sendKeysText);
 
                                 response = "{\"status\":\"ok\"}";
                             }
                             break;
+
                         case "/play":
                             if (!aiv2EditorElem.IsEnabledPlay())
                             {
@@ -346,64 +275,16 @@ namespace PotatoVoiceHub
                             else
                             {
                                 var queryString = HttpUtility.ParseQueryString(context.Request.Url.Query);
-                                // エスケープが必要な文字は消す
-                                var sendKeysText = queryString["text"];
-                                if (sendKeysText == null)
-                                {
-                                    sendKeysText = "";
-                                }
-                                sendKeysText = sendKeysText
-                                    .Replace("{", "").Replace("}", "")
-                                    .Replace("~", "")
-                                    .Replace("+", "")
-                                    .Replace("^", "")
-                                    .Replace("%", "")
-                                    .Replace("\r", "").Replace("\n", "")
-                                    .Replace("\"", "")
-                                    .Replace("(", "").Replace(")", "");
-                                //句読点があるとA.I.VOICE2が止まるのでカンマにする
-                                sendKeysText = sendKeysText
-                                    .Replace("。", ", ").Replace("｡", ", ")
-                                    .Replace("、", ", ").Replace("､", ", ")
-                                    .Replace("？", ", ").Replace("?", ", ")
-                                    .Replace("！", ", ").Replace("!", ", ")
-                                    .Replace("．", ", ").Replace(".", ", ");
+                                var sendKeysText = SanitizeText(queryString["text"]);
 
                                 //プリセットの機能は無し
 
-                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
-                                aiv2EditorElem.SetFocusMainWindow();
-
-                                // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                System.Windows.Forms.SendKeys.SendWait("^a");
-                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
-                                {
-                                    System.Windows.Forms.SendKeys.SendWait("^a^x");
-                                    Thread.Sleep(1);
-                                }
-                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-                                //再生ボタンが押せるようになるまで待つ
-                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-                                aiv2EditorElem.InvokePlay();
-
-                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
-
-                                //再生ボタンが停止ボタンになる前に次のメッセージが来ると、メッセージを上書きして停止ボタンを押してしまうので、
-                                //再生後は停止ボタンになるまで待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
-                                {
-                                    if (aiv2EditorElem.IsEnabledPlay())
-                                    {
-                                        Thread.Sleep(10);
-                                        continue;
-                                    }
-                                    break;
-                                }
+                                PlayAiv2(sendKeysText);
 
                                 response = "{\"status\":\"ok\"}";
                             }
                             break;
+
                         default:
                             response = "{\"status\":\"\"}";
                             break;
@@ -421,249 +302,137 @@ namespace PotatoVoiceHub
             context.Response.OutputStream.Close();
         }
 
-        private void initClipboard()
+        private string SanitizeText(string text)
         {
-            if (threadClipboard != null)
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(text)) return "";
 
+            // エスケープが必要な文字は消す
+            var sanitized = text
+                .Replace("{", "").Replace("}", "")
+                .Replace("~", "")
+                .Replace("+", "")
+                .Replace("^", "")
+                .Replace("%", "")
+                .Replace("\r", "").Replace("\n", "")
+                .Replace("\"", "")
+                .Replace("(", "").Replace(")", "");
+
+            // 句読点があるとA.I.VOICE2が止まるのでカンマにする
+            sanitized = sanitized
+                .Replace("。", ", ").Replace("｡", ", ")
+                .Replace("、", ", ").Replace("､", ", ")
+                .Replace("？", ", ").Replace("?", ", ")
+                .Replace("！", ", ").Replace("!", ", ")
+                .Replace("．", ", ").Replace(".", ", ");
+
+            return sanitized;
+        }
+
+        private string GetClipboardTextSafe()
+        {
             try
             {
-                clipboardTextLast = Clipboard.GetText().Trim();
+                string text = "";
+                Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        text = Clipboard.GetText().Trim();
+                    }
+                    catch { }
+                });
+                return text;
             }
-            catch (Exception)
+            catch
             {
+                return "";
             }
+        }
+
+        private void initClipboard()
+        {
+            if (threadClipboard != null) return;
+
+            // 初期値取得
+            clipboardTextLast = GetClipboardTextSafe();
 
             threadClipboard = new Thread(new ThreadStart(() =>
             {
-                // Windowが生きてる間はポーリングする
                 while (IsVisible)
                 {
-                    // A.I.VOICE1の処理
+                    Thread.Sleep(100);
+
+                    // どちらのエンジンも有効でない、またはBusyならスキップ
+                    // (個別判定したいが、ここでは簡易的に両方チェック)
+                    bool isAiv1Busy = _ttsControlAiv1 != null && _ttsControlAiv1.Status == HostStatus.Busy;
+                    bool isAiv2Busy = aiv2EditorElem != null && !aiv2EditorElem.IsEnabledPlay();
+
+                    if (isAiv1Busy || isAiv2Busy)
+                    {
+                        continue;
+                    }
+
+                    var clipboardText = GetClipboardTextSafe();
+                    if (string.IsNullOrEmpty(clipboardText) || clipboardText == clipboardTextLast)
+                    {
+                        continue;
+                    }
+
+                    // A.I.VOICE1処理
                     if (_ttsControlAiv1 != null)
                     {
-                        try
+                        // 接続確認
+                        if (_ttsControlAiv1.Status == HostStatus.NotConnected)
                         {
-                            if (_ttsControlAiv1.Status == HostStatus.Busy)
-                            {
-                                Thread.Sleep(100);
-                                continue;
-                            }
-
-                            var clipboardText = "";
-                            Dispatcher.Invoke((() =>
-                            {
-                                try
-                                {
-                                    clipboardText = Clipboard.GetText().Trim();
-                                }
-                                catch (Exception)
-                                {
-                                }
-                            }));
-                            if (clipboardText == "" || clipboardText == clipboardTextLast)
-                            {
-                                clipboardTextLast = clipboardText;
-                                Thread.Sleep(100);
-                                continue;
-                            }
-
-                            if (bool.Parse(option.isClipboardSaveAudio))
-                            {
-                                //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
-                                if (_ttsControlAiv1.Status == HostStatus.NotConnected)
-                                {
-                                    _ttsControlAiv1.Connect();
-                                }
-
-                                //ファイル名に使えない文字は消す.円マークまで消える。実装が面倒なので辞める
-                                //foreach (char c in Path.GetInvalidFileNameChars())
-                                //{
-                                //    fileName = fileName.Replace(c.ToString(), "");
-                                //}
-
-                                var fileName = option.saveAudioPath;
-                                fileName = fileName.Replace("{yyyyMMdd}", DateTime.Now.ToString("yyyyMMdd"));
-                                fileName = fileName.Replace("{HHmmss}", DateTime.Now.ToString("HHmmss"));
-                                fileName = fileName.Replace("{VoicePreset}", _ttsControlAiv1.CurrentVoicePresetName);
-                                fileName = fileName.Replace("{Text}", clipboardText.Length > 10 ? clipboardText.Substring(0, 10): clipboardText);
-
-                                if (fileName.Length > 256)
-                                {
-                                    fileName = fileName.Substring(0, 256);
-                                }
-                                new FileInfo(fileName).Directory.Create();
-
-                                _ttsControlAiv1.Text = clipboardText;
-
-                                try
-                                {
-                                    _ttsControlAiv1.SaveAudioToFile(fileName);
-                                }
-                                catch (Exception ex)
-                                {
-                                    WriteLog(ex.Message);
-                                }
-
-                                clipboardTextLast = clipboardText;
-                            }
-
-                            if (bool.Parse(option.isClipboardPlay))
-                            {
-                                //APIドキュメントに記載が無いが、どうも時間経過で接続が切れるっぽい
-                                if (_ttsControlAiv1.Status == HostStatus.NotConnected)
-                                {
-                                    _ttsControlAiv1.Connect();
-                                }
-
-                                _ttsControlAiv1.Text = clipboardText;
-
-                                _ttsControlAiv1.Play();
-
-                                clipboardTextLast = clipboardText;
-                            }
+                            try { _ttsControlAiv1.Connect(); } catch { }
                         }
-                        catch (Exception)
+
+                        if (bool.Parse(option.isClipboardSaveAudio))
                         {
+                            var fileName = option.saveAudioPath
+                                .Replace("{yyyyMMdd}", DateTime.Now.ToString("yyyyMMdd"))
+                                .Replace("{HHmmss}", DateTime.Now.ToString("HHmmss"))
+                                .Replace("{VoicePreset}", _ttsControlAiv1.CurrentVoicePresetName)
+                                .Replace("{Text}", clipboardText.Length > 10 ? clipboardText.Substring(0, 10) : clipboardText);
+
+                            if (fileName.Length > 256) fileName = fileName.Substring(0, 256);
+                            try
+                            {
+                                new FileInfo(fileName).Directory.Create();
+                                _ttsControlAiv1.Text = clipboardText;
+                                _ttsControlAiv1.SaveAudioToFile(fileName);
+                            }
+                            catch (Exception ex) { WriteLog(ex.Message); }
+                        }
+
+                        if (bool.Parse(option.isClipboardPlay))
+                        {
+                            try
+                            {
+                                _ttsControlAiv1.Text = clipboardText;
+                                _ttsControlAiv1.Play();
+                            }
+                            catch { }
                         }
                     }
 
-                    // A.I.VOICE2の処理
+                    // A.I.VOICE2処理
                     if (aiv2EditorElem != null)
                     {
-                        try
+                        var sanitizedText = SanitizeText(clipboardText);
+
+                        if (bool.Parse(option.isClipboardSaveAudio))
                         {
-                            if (!aiv2EditorElem.IsEnabledPlay())
-                            {
-                                Thread.Sleep(100);
-                                continue;
-                            }
-
-                            var clipboardText = "";
-                            Dispatcher.Invoke((() =>
-                            {
-                                try
-                                {
-                                    clipboardText = Clipboard.GetText().Trim();
-                                }
-                                catch (Exception)
-                                {
-                                }
-                            }));
-                            if (clipboardText == "" || clipboardText == clipboardTextLast)
-                            {
-                                clipboardTextLast = clipboardText;
-                                Thread.Sleep(100);
-                                continue;
-                            }
-
-                            // エスケープが必要な文字は消す
-                            var sendKeysText = clipboardText;
-                            if (sendKeysText == null)
-                            {
-                                sendKeysText = "";
-                            }
-                            sendKeysText = sendKeysText
-                                .Replace("{", "").Replace("}", "")
-                                .Replace("~", "")
-                                .Replace("+", "")
-                                .Replace("^", "")
-                                .Replace("%", "")
-                                .Replace("\r", "").Replace("\n", "")
-                                .Replace("\"", "")
-                                .Replace("(", "").Replace(")", "");
-                            //句読点があるとA.I.VOICE2が止まるのでカンマにする
-                            sendKeysText = sendKeysText
-                                .Replace("。", ", ").Replace("｡", ", ")
-                                .Replace("、", ", ").Replace("､", ", ")
-                                .Replace("？", ", ").Replace("?", ", ")
-                                .Replace("！", ", ").Replace("!", ", ")
-                                .Replace("．", ", ").Replace(".", ", ");
-
-                            if (bool.Parse(option.isClipboardSaveAudio))
-                            {
-                                //ファイル名はA.I.VOICE2が決めるため処理しない
-
-                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
-                                aiv2EditorElem.SetFocusMainWindow();
-
-                                // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                System.Windows.Forms.SendKeys.SendWait("^a");
-                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
-                                {
-                                    System.Windows.Forms.SendKeys.SendWait("^a^x");
-                                    Thread.Sleep(1);
-                                }
-                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-                                //再生ボタンが押せるようになるまで待つ
-                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-                                aiv2EditorElem.InvokeWrite1();
-
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
-                                {
-                                    if (aiv2EditorElem.GetElemAiv2Write2() != null)
-                                    {
-                                        break;
-                                    }
-                                }
-                                if (aiv2EditorElem.GetElemAiv2Write2() == null)
-                                {
-                                    WriteLog("10秒以内に書き出しを実行ボタンが見つかりませんでした。");
-                                }
-                                else
-                                {
-                                    aiv2EditorElem.InvokeWrite2();
-                                }
-
-                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
-
-                                clipboardTextLast = clipboardText;
-                            }
-
-                            if (bool.Parse(option.isClipboardPlay))
-                            {
-                                var foregroundWindowHwd = Win32Api.GetForegroundWindow();
-                                Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
-                                aiv2EditorElem.SetFocusMainWindow();
-
-                                // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
-                                System.Windows.Forms.SendKeys.SendWait("^a");
-                                for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
-                                {
-                                    System.Windows.Forms.SendKeys.SendWait("^a^x");
-                                    Thread.Sleep(1);
-                                }
-                                System.Windows.Forms.SendKeys.SendWait(sendKeysText);
-                                //再生ボタンが押せるようになるまで待つ
-                                Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
-                                aiv2EditorElem.InvokePlay();
-
-                                Win32Api.SetForegroundWindow(foregroundWindowHwd);
-
-                                //再生ボタンが停止ボタンになる前に次のメッセージが来ると、メッセージを上書きして停止ボタンを押してしまうので、
-                                //再生後は停止ボタンになるまで待つ
-                                for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
-                                {
-                                    if (aiv2EditorElem.IsEnabledPlay())
-                                    {
-                                        Thread.Sleep(10);
-                                        continue;
-                                    }
-                                    break;
-                                }
-
-                                clipboardTextLast = clipboardText;
-                            }
+                            SaveAudioAiv2(sanitizedText);
                         }
-                        catch (Exception)
+
+                        if (bool.Parse(option.isClipboardPlay))
                         {
+                            PlayAiv2(sanitizedText);
                         }
                     }
 
-                    Thread.Sleep(100);
+                    clipboardTextLast = clipboardText;
                 }
             }));
             threadClipboard.Start();
@@ -845,6 +614,82 @@ namespace PotatoVoiceHub
             {
                 WriteLog(exc.Message + "\n" + exc.StackTrace);
             }
+        }
+
+        private void PlayAiv2(string text)
+        {
+            var foregroundWindowHwd = Win32Api.GetForegroundWindow();
+            Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
+            aiv2EditorElem.SetFocusMainWindow();
+
+            // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
+            System.Windows.Forms.SendKeys.SendWait("^z");
+            //for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
+            //{
+            //    System.Windows.Forms.SendKeys.SendWait("{LEFT}");
+            //    System.Windows.Forms.SendKeys.SendWait("{RIGHT}");
+            //    System.Windows.Forms.SendKeys.SendWait("^a");
+            //    Thread.Sleep(1);
+            //}
+
+            System.Windows.Forms.SendKeys.SendWait(text);
+            //再生ボタンが押せるようになるまで待つ
+            Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
+            aiv2EditorElem.InvokePlay();
+
+            Win32Api.SetForegroundWindow(foregroundWindowHwd);
+
+            //再生ボタンが停止ボタンになる前に次のメッセージが来ると、メッセージを上書きして停止ボタンを押してしまうので、
+            //再生後は停止ボタンになるまで待つ
+            for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-3);)
+            {
+                if (aiv2EditorElem.IsEnabledPlay())
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+                break;
+            }
+        }
+
+        private void SaveAudioAiv2(string text)
+        {
+            var foregroundWindowHwd = Win32Api.GetForegroundWindow();
+            Win32Api.SetForegroundWindow(aiv2EditorElem.GetHandle());
+            aiv2EditorElem.SetFocusMainWindow();
+
+            // 意味不明だが100回繰り返すと文章を消せる確率が大幅アップする
+            System.Windows.Forms.SendKeys.SendWait("^z");
+            //for (int i = 0; i < int.Parse(option.aiv2DelCount); i++)
+            //{
+            //    System.Windows.Forms.SendKeys.SendWait("{LEFT}");
+            //    System.Windows.Forms.SendKeys.SendWait("{RIGHT}");
+            //    System.Windows.Forms.SendKeys.SendWait("^a");
+            //    Thread.Sleep(1);
+            //}
+
+            System.Windows.Forms.SendKeys.SendWait(text);
+            //再生ボタンが押せるようになるまで待つ
+            Thread.Sleep(int.Parse(option.aiv2SendKeysSleep));
+            aiv2EditorElem.InvokeWrite1();
+
+            for (DateTime dt = DateTime.Now; dt > DateTime.Now.AddSeconds(-10);)
+            {
+                if (aiv2EditorElem.GetElemAiv2Write2() != null)
+                {
+                    break;
+                }
+            }
+            if (aiv2EditorElem.GetElemAiv2Write2() == null)
+            {
+                WriteLog("10秒以内に書き出しを実行ボタンが見つかりませんでした。");
+            }
+            else
+            {
+                aiv2EditorElem.InvokeWrite2();
+            }
+
+            Win32Api.SetForegroundWindow(foregroundWindowHwd);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -316,6 +316,32 @@ namespace PotatoVoiceHub
             return Aiv2Native.GetValue(serif);
         }
 
+        /// <summary>
+        /// Editorに読み上げさせられるテキストか。<b>再生・書き出しを押す前に必ず通すこと。</b>
+        ///
+        /// 読み上げるものが無いテキスト(「？」「...」「」など)を入れた状態で再生を押すと、
+        /// Editorが範囲外アクセス(RangeError)でエラー画面に落ち、再起動が必要になる。
+        /// 押しさえしなければ落ちないので、押す側で弾く。
+        /// 詳細はdocs/findings-2026-07-29.md §21。
+        ///
+        /// 判定は「文字が1つでも入っているか」だけにしている。Editorの読み仮名ペインを
+        /// 見れば「読めるか」を直接聞けるが、テキストを差し替えた直後はまだ前の文の
+        /// 読み仮名が残っており、遅れて空になる。待ち時間に依存する判定は、
+        /// 外したときの代償がEditorのクラッシュなので採らない。
+        ///
+        /// そのぶん「％」のように、記号だけでもEditorが読めるもの(「パーセント」と読む)を
+        /// 取りこぼす。文全体が記号だけの場合に限られるので、読み上げないことで受け入れる。
+        /// </summary>
+        public static bool HasSomethingToSpeak(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (var c in text)
+            {
+                if (char.IsLetterOrDigit(c)) return true;
+            }
+            return false;
+        }
+
         // ---------------------------------------------------------------
         // テキスト投入
         // ---------------------------------------------------------------
@@ -345,11 +371,25 @@ namespace PotatoVoiceHub
         /// セリフ入力欄を指定テキストに置き換える。
         /// WM_CHARは非同期に処理されるので、反映されるまでポーリングで待つ。
         ///
-        /// 「現在の文」の位置はここでは触らない。このクラスは位置を動かさないので、
-        /// 呼び出し側が1文ずつ渡している限り位置は先頭のままになる。
-        /// 詳細はSplitSentences()を参照。
+        /// timeoutMsは「消えるまで」「反映されるまで」1回ぶんの上限なので、
+        /// この呼び出し全体はその倍まで伸びうる。締切のある経路からは
+        /// 残り時間を渡すオーバーロードの方を使うこと。
+        ///
+        /// 「現在の文」の位置はここでは触らない。位置を先頭に保てるのは、
+        /// 一度先頭になった後、呼び出し側が常に1文ずつ渡し、かつ利用者が
+        /// Editor上で位置を動かさない間だけである。詳細はSplitSentences()を参照。
         /// </summary>
         public bool SetText(string text, int timeoutMs, int extraKeys)
+        {
+            // 締切を持たない呼び出し。個々の待ちにtimeoutMsをそのまま使う
+            return SetText(text, Stopwatch.StartNew(), timeoutMs, int.MaxValue, extraKeys);
+        }
+
+        /// <summary>
+        /// 締切つきのSetText。個々の待ちには「1回ぶんの上限」と「締切までの残り」の
+        /// 短い方しか渡さないので、締切を跨いで待ち続けることがない。
+        /// </summary>
+        bool SetText(string text, Stopwatch elapsed, int timeoutMs, int totalTimeoutMs, int extraKeys)
         {
             lock (sync)
             {
@@ -357,22 +397,29 @@ namespace PotatoVoiceHub
                 if (view == IntPtr.Zero) return false;
                 if (text == null) text = "";
 
-                return ReplaceText(view, text, timeoutMs, extraKeys);
+                return ReplaceText(view, text, elapsed, timeoutMs, totalTimeoutMs, extraKeys);
             }
         }
 
         /// <summary>入力欄を空にしてから投入する。空になり切るまでは投入しない。</summary>
-        bool ReplaceText(IntPtr view, string text, int timeoutMs, int extraKeys)
+        bool ReplaceText(IntPtr view, string text, Stopwatch elapsed, int timeoutMs, int totalTimeoutMs,
+            int extraKeys)
         {
             ClearText(extraKeys);
-            if (!WaitForText("", timeoutMs))
+            if (!WaitForText("", Remaining(elapsed, timeoutMs, totalTimeoutMs)))
             {
                 // 消え切らないまま投入すると前のセリフに連結されるので中断する
                 return false;
             }
 
             Aiv2Native.PostText(view, text);
-            return WaitForText(text, timeoutMs);
+            return WaitForText(text, Remaining(elapsed, timeoutMs, totalTimeoutMs));
+        }
+
+        /// <summary>1回ぶんの上限と締切までの残りの、短い方。</summary>
+        static int Remaining(Stopwatch elapsed, int timeoutMs, int totalTimeoutMs)
+        {
+            return Math.Min(timeoutMs, totalTimeoutMs - (int)elapsed.ElapsedMilliseconds);
         }
 
         /// <summary>
@@ -598,6 +645,9 @@ namespace PotatoVoiceHub
         /// Editorに渡すのは常に1文だけで、「前の文」「次の文」は一度も押さない。
         /// なぜそうするのかはSplitSentences()を参照。
         ///
+        /// 読み上げるものが無い文(区切り文字だけになった文など)は再生を押さずに飛ばす。
+        /// 押すとEditorが落ちるため。判定はHasSomethingToSpeak()を参照。
+        ///
         /// 1文ごとに「投入＋開始待ち＋読み上げ終了待ち」が入るため、文数に比例して
         /// 時間がかかる。区切り文字はいくつでも含められるので、文数だけでは上限に
         /// ならない。totalTimeoutMsがこの呼び出し全体の締切で、個々の待ちには
@@ -619,7 +669,16 @@ namespace PotatoVoiceHub
             {
                 if (totalTimeoutMs - (int)elapsed.ElapsedMilliseconds <= 0) return PlayAllResult.Timeout;
 
-                if (!SetText(sentence, textTimeoutMs, extraKeys)) return PlayAllResult.TextFailed;
+                // 「本当！？」は「本当！」と「？」に割れる。読むものが無い文は投入もせず飛ばす。
+                // 飛ばしても音は変わらない(Editor自身も「本当！」までしか読まない)
+                if (!HasSomethingToSpeak(sentence)) continue;
+
+                // SetTextも締切に掛かればfalseを返すので、StartPlayと同じく理由を見分ける
+                if (!SetText(sentence, elapsed, textTimeoutMs, totalTimeoutMs, extraKeys))
+                {
+                    return totalTimeoutMs - (int)elapsed.ElapsedMilliseconds <= 0
+                        ? PlayAllResult.Timeout : PlayAllResult.TextFailed;
+                }
 
                 // StartPlayは締切に掛かった場合も押せなかった場合もfalseなので、
                 // 締切の方が先に来ていたならそちらを理由にする

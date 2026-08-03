@@ -856,6 +856,10 @@ namespace PotatoVoiceHub
                 }
             }
 
+            // 「...」や「!!」だけのように読み上げるものが無いテキストで再生を押すと
+            // Editorが落ちる。読ませるものが無いだけなので、何もせず成功として返す
+            if (!Aiv2EditorElem.HasSomethingToSpeak(text)) return true;
+
             if (!SetTextAiv2(text)) return false;
 
             // 停止ボタンに変わる前に次のメッセージが来ると、セリフを上書きした上で
@@ -893,6 +897,14 @@ namespace PotatoVoiceHub
                     WriteLog("保存先として使えないパスです: " + path + " (" + ex.Message + ")");
                     return false;
                 }
+            }
+
+            // 読み上げるものが無いテキストのまま操作するとEditorが落ちうる(再生では実機確認済み)。
+            // 書き出しても中身の無い音声にしかならないので、ここで止める
+            if (!Aiv2EditorElem.HasSomethingToSpeak(text))
+            {
+                WriteLog("A.I.VOICE2 に読み上げるものが無いため、書き出しませんでした: " + text);
+                return false;
             }
 
             if (!SetTextAiv2(text)) return false;

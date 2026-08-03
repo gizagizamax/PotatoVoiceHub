@@ -34,7 +34,6 @@
       <HintPath>Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
 
   <ItemGroup>

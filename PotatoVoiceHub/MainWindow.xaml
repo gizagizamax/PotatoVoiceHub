@@ -43,9 +43,9 @@
                                 </StackPanel>
                                 <Border Height="1" Background="#FF616161"/>
                                 <StackPanel Margin="0,5,0,10">
-                                    <Label Content="セリフが入力欄に反映されるまでの最大待ち時間(ミリ秒)" Margin="0,0,0,0"/>
-                                    <Label Content="反映され次第すぐ進むので、大きめにしても普段の速度は変わりません。" Margin="0,-10,0,0"/>
-                                    <Label Content="長文が途中で切れる場合に増やしてください。" Margin="0,-10,0,0"/>
+                                    <Label Content="セリフの反映が進まなくなってから諦めるまでの時間(ミリ秒)" Margin="0,0,0,0"/>
+                                    <Label Content="反映が進んでいる間は待ち続けるので、長文でも途中で切れません。" Margin="0,-10,0,0"/>
+                                    <Label Content="Editorが無反応になったときの見切りにだけ使います。" Margin="0,-10,0,0"/>
                                     <TextBox x:Name="txtAiv2SendKeysSleep" Text="" TextChanged="txtAiv2SendKeysSleep_TextChanged"/>
                                 </StackPanel>
                                 <Border Height="1" Background="#FF616161"/>

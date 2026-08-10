@@ -120,6 +120,16 @@ namespace PotatoVoiceHub
                 aiv2EditorElem = null;
                 return false;
             }
+
+            // 右ペインが「アクセント」だと、入力欄の1キーごとにEditorが
+            // モーラぶんの画面要素を組み直すため、長い文の消去が桁違いに遅くなる
+            // (実測: 300文字で15.9秒 → 1.1秒)。読み上げには使わないタブなので寄せておく。
+            // 寄せられなくても読み上げ自体はできるので、接続は成功として扱う。
+            if (!aiv2EditorElem.SelectVoiceEffectTab())
+            {
+                WriteLog("A.I.VOICE2 Editor の「音声効果」タブを選べませんでした。");
+                WriteLog("「アクセント」タブを開いたままだと、長い文の読み上げが遅くなります。");
+            }
             return true;
         }
         private void initHttp()
@@ -775,7 +785,11 @@ namespace PotatoVoiceHub
         // 書き出しそのものの完了を待つ上限。実測は約2.4秒
         const int Aiv2WriteFinishTimeoutMs = 60000;
 
-        private int GetAiv2TextTimeoutMs()
+        /// <summary>
+        /// セリフの反映が1文字も進まないまま待てる時間(ms)。全体の予算ではない。
+        /// 反映が進んでいる間は待ち続けるので、テキストが長いというだけでは打ち切らない。
+        /// </summary>
+        private int GetAiv2TextStallMs()
         {
             int ms;
             return int.TryParse(option.aiv2SendKeysSleep, out ms) && ms > 0 ? ms : 1000;
@@ -793,21 +807,49 @@ namespace PotatoVoiceHub
         /// </summary>
         private bool SetTextAiv2(string text)
         {
-            if (!aiv2EditorElem.SetText(text, GetAiv2TextTimeoutMs(), GetAiv2DelCount()))
-            {
-                WriteLogAiv2SetTextFailed();
-                return false;
-            }
-            return true;
+            return ReportAiv2SetText(
+                aiv2EditorElem.SetText(text, GetAiv2TextStallMs(), GetAiv2DelCount()));
         }
 
-        private void WriteLogAiv2SetTextFailed()
+        // 連続して反映に失敗した回数。同じ長い案内でログが埋まるのを防ぐために数える
+        private int aiv2SetTextFailures;
+
+        /// <summary>
+        /// SetTextの結果をログに落とす。成功ならtrue。
+        ///
+        /// 失敗したときは「どの段階で止まったか」「入力欄に何文字残っていたか」を必ず残す。
+        /// これが無いと、報告を受けても消去でこけたのか投入でこけたのかを区別できない。
+        /// 長い対処案内は連続失敗の1回目だけにして、2回目以降は1行に落とす。
+        /// </summary>
+        private bool ReportAiv2SetText(Aiv2EditorElem.SetTextResult result)
         {
+            if (result.Ok)
+            {
+                aiv2SetTextFailures = 0;
+                return true;
+            }
+
+            if (aiv2SetTextFailures++ > 0)
+            {
+                WriteLog("A.I.VOICE2 反映失敗 " + result.Describe());
+                return false;
+            }
+
+            if (result.Phase == Aiv2EditorElem.SetTextPhase.Focus)
+            {
+                WriteLog("A.I.VOICE2 のセリフ入力欄にフォーカスを移せませんでした。"
+                    + result.Describe()
+                    + " Editorで設定画面などの別ウィンドウが開いていると操作を受け付けません。"
+                    + "閉じてから再度お試しください。");
+                return false;
+            }
+
             WriteLog("A.I.VOICE2 のセリフ入力欄にテキストを反映できませんでした。"
-                + "「反映されるまでの最大待ち時間」を増やしてみてください。"
-                + "それでも直らない場合はEditor側でセリフ入力欄を空にしてください。"
+                + result.Describe()
+                + " 反映が止まったまま戻りませんでした。Editor側でセリフ入力欄を空にしてください。"
                 + "Editorの表示が崩れて再生ボタンが見えなくなっている場合は、"
                 + "空にしないと復帰しません。");
+            return false;
         }
 
         /// <summary>
@@ -839,17 +881,20 @@ namespace PotatoVoiceHub
                 // 1文ずつ入力欄へ入れては再生する。全文を入れて「次の文」で送る方法は
                 // Editorを壊すので使わない(理由はAiv2EditorElem.SplitSentences)。
                 // 各文の終了を待つ必要があるため、通常モードより長くブロックする。
+                Aiv2EditorElem.SetTextResult textResult;
                 var result = aiv2EditorElem.PlayAllSentences(text,
-                    GetAiv2TextTimeoutMs(), GetAiv2DelCount(),
-                    Aiv2PlayStartTimeoutMs, Aiv2PlayFinishTimeoutMs, Aiv2PlayAllTimeoutMs);
+                    GetAiv2TextStallMs(), GetAiv2DelCount(),
+                    Aiv2PlayStartTimeoutMs, Aiv2PlayFinishTimeoutMs, Aiv2PlayAllTimeoutMs,
+                    out textResult);
 
                 switch (result)
                 {
                     case Aiv2EditorElem.PlayAllResult.Ok:
+                        aiv2SetTextFailures = 0;
                         return true;
                     case Aiv2EditorElem.PlayAllResult.TextFailed:
-                        WriteLogAiv2SetTextFailed();
-                        return false;
+                        // 失敗の詳細をログに残す。結果はfalse固定
+                        return ReportAiv2SetText(textResult);
                     default:
                         WriteLog("A.I.VOICE2 の文ごと再生が最後まで完了しませんでした。");
                         return false;

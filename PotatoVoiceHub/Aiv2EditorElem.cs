@@ -23,6 +23,9 @@ namespace PotatoVoiceHub
         public const string NameWrite = "書き出し";
 
         // キャラクター切り替えに使うメニューと、左のキャラクター一覧の行グループ
+        /// <summary>右ペインのタブ。アクセント欄を開かせないために音声効果側へ寄せる。</summary>
+        const string NameTabVoiceEffect = "音声効果";
+
         const string NameMenuCharacter = "キャラクター";
         const string NameMenuAssign = "テキストブロックに割り当て";
         const string NameMenuNthCharacterSuffix = "番目のキャラクター";
@@ -70,7 +73,7 @@ namespace PotatoVoiceHub
         // MSAAノードは存在する限り参照が生きるのでキャッシュする。
         // クリップボード監視が100ms毎にIsEnabledPlay()を呼ぶため、
         // 毎回ツリー全体(80要素超)を走査すると重い。
-        Aiv2Native.IAccessible cachePlay, cacheWrite, cacheSerif;
+        Aiv2Native.IAccessible cachePlay, cacheWrite, cacheSerif, cacheVoiceEffectTab;
 
         // このEditorから一度でも要素を引き当てられたか。
         // Flutterはアクセシビリティの要求を受けて初めてセマンティクスを構築するため、
@@ -140,7 +143,7 @@ namespace PotatoVoiceHub
         void Reset()
         {
             cachedViewHandle = IntPtr.Zero;
-            cachePlay = cacheWrite = cacheSerif = null;
+            cachePlay = cacheWrite = cacheSerif = cacheVoiceEffectTab = null;
             // Editorのプロセスが変わったらセマンティクスも作り直しになる
             hasSeenElements = false;
         }
@@ -207,7 +210,7 @@ namespace PotatoVoiceHub
             var view = GetViewHandle();
             if (view == IntPtr.Zero) return;
 
-            cachePlay = cacheWrite = cacheSerif = null;
+            cachePlay = cacheWrite = cacheSerif = cacheVoiceEffectTab = null;
 
             foreach (var node in Aiv2Native.Dump(view, MaxTreeDepth))
             {
@@ -215,6 +218,7 @@ namespace PotatoVoiceHub
                 {
                     if (cachePlay == null && (node.Name == NamePlay || node.Name == NameStop)) cachePlay = node.Acc;
                     else if (cacheWrite == null && node.Name == NameWrite) cacheWrite = node.Acc;
+                    else if (cacheVoiceEffectTab == null && node.Name == NameTabVoiceEffect) cacheVoiceEffectTab = node.Acc;
                 }
                 else if (node.Role == Aiv2Native.RoleEditText)
                 {
@@ -267,6 +271,37 @@ namespace PotatoVoiceHub
 
             RefreshCache();
             return cacheSerif;
+        }
+
+        /// <summary>タブを押してから表示が入れ替わるまでの待ち時間(ms)。</summary>
+        const int TabSettleMs = 600;
+
+        /// <summary>
+        /// 右ペインを「音声効果」タブへ寄せる。押せたらtrue。
+        ///
+        /// 「アクセント」タブは1モーラにつき1ノードをMSAAツリーへ出す。300文字入れると
+        /// 83→1,325要素まで膨らみ、Flutterはキー1打ごとにこのツリーを組み直すので、
+        /// 1キーのコストが残り文字数に比例する。実測では同じ300文字の消去が
+        /// アクセントで15,896ms、音声効果で1,141msだった(14倍)。
+        /// 詳細はdocs/findings-settext-2026-08-10.md 実測7。
+        ///
+        /// 押せなくても読み上げ自体は続けられる(遅くなるだけ)ので、
+        /// 引き当てられなければ黙って諦める。呼び出し側も失敗を致命扱いしないこと。
+        /// </summary>
+        public bool SelectVoiceEffectTab()
+        {
+            lock (sync)
+            {
+                return PressVoiceEffectTab();
+            }
+        }
+
+        bool PressVoiceEffectTab()
+        {
+            var tab = FindButton(() => cacheVoiceEffectTab, NameTabVoiceEffect);
+            if (tab == null || !Aiv2Native.DoDefaultAction(tab)) return false;
+            Thread.Sleep(TabSettleMs);
+            return true;
         }
 
         // ---------------------------------------------------------------
@@ -356,80 +391,246 @@ namespace PotatoVoiceHub
         // テキスト投入
         // ---------------------------------------------------------------
 
-        /// <summary>
-        /// セリフ入力欄を空にする。再生後はキャレットが先頭に戻ることがあり、
-        /// BackSpaceだけでは1文字も消えない。Deleteも同数送って前後どちらでも消えるようにする。
-        /// </summary>
-        public void ClearText(int extraKeys)
+        /// <summary>SetText()がどの段階で止まったか。利用者からの報告を切り分けるために残す。</summary>
+        public enum SetTextPhase
         {
-            var view = GetViewHandle();
-            if (view == IntPtr.Zero) return;
+            /// <summary>セリフ入力欄へフォーカスを移せなかった。キーは投げていない。</summary>
+            Focus,
+            /// <summary>入力欄を空にし切れなかった。テキストは投入していない。</summary>
+            Clear,
+            /// <summary>テキストを入れ切れなかった。</summary>
+            Fill,
+        }
 
-            // これを打たないとWM_CHAR/WM_KEYDOWNが握り潰される。詳細はAiv2Native.TakeFocus
-            FocusSerifBox();
+        /// <summary>
+        /// SetText()の結果。失敗したときに「どの段階で」「入力欄が何文字のまま」
+        /// 止まったのかを持ち帰る。これが無いと、同じ文言のログからは
+        /// 消去でこけたのか投入でこけたのかが区別できない。
+        /// </summary>
+        public struct SetTextResult
+        {
+            public bool Ok;
+            public SetTextPhase Phase;
+            /// <summary>打ち切った時点で入力欄に見えていた文字数。読めなかった場合は-1。</summary>
+            public int CurrentLength;
+            public int TargetLength;
+            public int ElapsedMs;
 
+            /// <summary>ログ1行に添える短い形。長い案内で埋めないよう最小限にする。</summary>
+            public string Describe()
+            {
+                string phase =
+                    Phase == SetTextPhase.Focus ? "フォーカス" :
+                    Phase == SetTextPhase.Clear ? "消去" : "投入";
+                string current = CurrentLength < 0 ? "不明" : CurrentLength.ToString();
+                return "[" + phase + "] 入力欄" + current + "文字/目標" + TargetLength + "文字/"
+                    + ElapsedMs + "ms";
+            }
+        }
+
+        /// <summary>入力欄を読み直す間隔(ms)。GetText()自体は実測4.2msなので細かく見てよい。</summary>
+        const int PollIntervalMs = 20;
+
+        /// <summary>
+        /// 1回に投げる削除キーの数。投げっぱなしのキーは取り消せないので、
+        /// 効いたことを確かめないまま積み上げないよう小分けにする。
+        /// </summary>
+        const int ClearBatchKeys = 32;
+
+        /// <summary>
+        /// 1回のSetTextをここまでで必ず打ち切る。
+        /// 進捗がある限り待つ作りなので、上限が無いと際限なくブロックしうる。
+        /// </summary>
+        public const int SetTextHardLimitMs = 30000;
+
+        /// <summary>
+        /// セリフ入力欄を空にする。空になったらtrue。
+        ///
+        /// 削除キーはPostMessageで投げっぱなしになり、Editorが処理し終わるのを待つ手段が無い。
+        /// かつては見えている文字数ぶんを一度に投げていたが、見えている文字数には
+        /// 「まだ処理されていないキー」が入っていないため、消去が間に合わないと
+        /// 次の呼び出しで必ず投げ過ぎる。投げ過ぎたキーはキューに残って後続を待たせ、
+        /// 待たせるほどまた投げ過ぎる。実測ではこの積み上がりで1キーあたり
+        /// 2.3ms→45msまで落ち、待ち時間をいくら伸ばしても復帰しなくなった。
+        /// 詳細はdocs/findings-settext-2026-08-10.md。
+        ///
+        /// そこで投げる数を「今見えている文字数」で頭打ちにしたうえで小分けにし、
+        /// 1バッチ投げるごとに入力欄が変化するのを待ってから次を投げる。
+        /// 宙に浮くのは常に高々1バッチなので、積み上がりが起きない。
+        ///
+        /// BackSpaceとDeleteを両方送るのは、再生後はキャレットが先頭に戻り
+        /// BackSpaceだけでは1文字も消えないため。空振りするキーは実測0.54msと安いので、
+        /// どちらが効くかを見分けるより両方送る方が単純で速い。
+        /// </summary>
+        /// <param name="stallTimeoutMs">入力欄が1文字も変化しないまま待てる時間(ms)。</param>
+        public bool ClearText(int extraKeys, int stallTimeoutMs)
+        {
+            lock (sync)
+            {
+                var view = GetViewHandle();
+                if (view == IntPtr.Zero) return false;
+                if (!FocusSerifBox()) return false;
+
+                int length;
+                return ClearInBatches(view, Stopwatch.StartNew(), stallTimeoutMs, SetTextHardLimitMs,
+                    extraKeys, out length);
+            }
+        }
+
+        /// <param name="length">打ち切った時点の文字数(読めなければ-1)。ログ用。</param>
+        bool ClearInBatches(IntPtr view, Stopwatch call, int stallTimeoutMs, int budgetMs,
+            int extraKeys, out int length)
+        {
             var current = GetText();
-            int length = current == null ? 0 : current.Length;
-            int count = length + Math.Max(0, extraKeys);
-            if (count <= 0) return;
+            length = current == null ? -1 : current.Length;
+            bool retriedTab = false;
 
-            Aiv2Native.PostKey(view, Aiv2Native.VK_BACK, count);
-            Aiv2Native.PostKey(view, Aiv2Native.VK_DELETE, count);
+            while (current == null || current.Length > 0)
+            {
+                int target = 0;
+                if (current != null)
+                {
+                    // 見えている文字数を超えて投げない。上乗せが効くのは末尾の端数だけになる
+                    int count = Math.Min(ClearBatchKeys, current.Length + Math.Max(0, extraKeys));
+                    Aiv2Native.PostKey(view, Aiv2Native.VK_BACK, count);
+                    Aiv2Native.PostKey(view, Aiv2Native.VK_DELETE, count);
+
+                    // 「1文字でも減ったら次を投げる」では、投げた1バッチが消化される前に
+                    // 次を積んでしまい、直したはずの積み上がりがそのまま起きる。
+                    // 投げたぶんが効いたと言える所まで減るのを待ってから次へ進む
+                    target = Math.Max(0, current.Length - count);
+                }
+
+                bool shrank = WaitUntilShorter(target, call, stallTimeoutMs, budgetMs, out current);
+                length = current == null ? -1 : current.Length;
+                if (!shrank)
+                {
+                    // 利用者がEditor上でアクセントタブへ戻していると1キーが極端に遅くなり、
+                    // 進捗が止まったように見える。接続時に寄せてはいるが手で戻されうるので、
+                    // 止まったときだけ寄せ直して1度やり直す。毎回押すと1回あたりTabSettleMsを払う。
+                    if (retriedTab || call.ElapsedMilliseconds >= budgetMs) return false;
+                    retriedTab = true;
+                    if (!PressVoiceEffectTab() || !FocusSerifBox()) return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 入力欄がtarget文字以下になるまで待つ。
+        /// 減り続けている間は待ち、1文字も動かないままstallTimeoutMs過ぎたら諦める。
+        /// </summary>
+        bool WaitUntilShorter(int target, Stopwatch call, int stallTimeoutMs, int budgetMs,
+            out string current)
+        {
+            var stall = Stopwatch.StartNew();
+            string previous = null;
+            bool seen = false;
+
+            while (true)
+            {
+                current = GetText();
+                if (current != null && current.Length <= target) return true;
+
+                if (!seen || current != previous)
+                {
+                    previous = current;
+                    seen = true;
+                    stall.Restart();
+                }
+                else if (stall.ElapsedMilliseconds >= stallTimeoutMs) return false;
+
+                if (call.ElapsedMilliseconds >= budgetMs) return false;
+                Thread.Sleep(PollIntervalMs);
+            }
         }
 
         /// <summary>
         /// セリフ入力欄を指定テキストに置き換える。
         /// WM_CHARは非同期に処理されるので、反映されるまでポーリングで待つ。
         ///
-        /// timeoutMsは「消えるまで」「反映されるまで」1回ぶんの上限なので、
-        /// この呼び出し全体はその倍まで伸びうる。締切のある経路からは
-        /// 残り時間を渡すオーバーロードの方を使うこと。
+        /// stallTimeoutMsは「全体の予算」ではなく「1文字も進まないまま待てる時間」。
+        /// 進んでいる限り待つので、テキストが長いというだけでは失敗しない。
+        /// Editorが無反応になったときの見切りの速さは従来と変わらない。
         ///
         /// 「現在の文」の位置はここでは触らない。位置を先頭に保てるのは、
         /// 一度先頭になった後、呼び出し側が常に1文ずつ渡し、かつ利用者が
         /// Editor上で位置を動かさない間だけである。詳細はSplitSentences()を参照。
         /// </summary>
-        public bool SetText(string text, int timeoutMs, int extraKeys)
+        public SetTextResult SetText(string text, int stallTimeoutMs, int extraKeys)
         {
-            // 締切を持たない呼び出し。個々の待ちにtimeoutMsをそのまま使う
-            return SetText(text, Stopwatch.StartNew(), timeoutMs, int.MaxValue, extraKeys);
+            // 締切を持たない呼び出し。絶対上限だけが効く
+            return SetText(text, Stopwatch.StartNew(), stallTimeoutMs, int.MaxValue, extraKeys);
         }
 
         /// <summary>
-        /// 締切つきのSetText。個々の待ちには「1回ぶんの上限」と「締切までの残り」の
-        /// 短い方しか渡さないので、締切を跨いで待ち続けることがない。
+        /// 締切つきのSetText。この1回に使える時間は「締切までの残り」と絶対上限の短い方。
+        /// 最後の1文だけ青天井にならないようにするため。
         /// </summary>
-        bool SetText(string text, Stopwatch elapsed, int timeoutMs, int totalTimeoutMs, int extraKeys)
+        SetTextResult SetText(string text, Stopwatch elapsed, int stallTimeoutMs, int totalTimeoutMs,
+            int extraKeys)
         {
+            if (text == null) text = "";
+
+            int budgetMs = (int)Math.Min((long)SetTextHardLimitMs,
+                (long)totalTimeoutMs - elapsed.ElapsedMilliseconds);
+            var call = Stopwatch.StartNew();
+
             lock (sync)
             {
                 var view = GetViewHandle();
-                if (view == IntPtr.Zero) return false;
-                if (text == null) text = "";
+                if (view == IntPtr.Zero) return Failed(SetTextPhase.Focus, -1, text.Length, call);
 
-                return ReplaceText(view, text, elapsed, timeoutMs, totalTimeoutMs, extraKeys);
+                return ReplaceText(view, text, call, stallTimeoutMs, budgetMs, extraKeys);
             }
         }
 
         /// <summary>入力欄を空にしてから投入する。空になり切るまでは投入しない。</summary>
-        bool ReplaceText(IntPtr view, string text, Stopwatch elapsed, int timeoutMs, int totalTimeoutMs,
-            int extraKeys)
+        SetTextResult ReplaceText(IntPtr view, string text, Stopwatch call, int stallTimeoutMs,
+            int budgetMs, int extraKeys)
         {
-            ClearText(extraKeys);
-            if (!WaitForText("", Remaining(elapsed, timeoutMs, totalTimeoutMs)))
+            // これを打たないとWM_CHAR/WM_KEYDOWNが何の兆候もなく握り潰される。
+            // 起きるのはEditorが別ウィンドウ(設定画面など)を開いている間で、
+            // その状態では何を投げても無駄なので、投げずに理由ごと返す。
+            // 詳細はAiv2Native.TakeFocus
+            if (!FocusSerifBox()) return Failed(SetTextPhase.Focus, -1, text.Length, call);
+
+            int length;
+            if (!ClearInBatches(view, call, stallTimeoutMs, budgetMs, extraKeys, out length))
             {
                 // 消え切らないまま投入すると前のセリフに連結されるので中断する
-                return false;
+                return Failed(SetTextPhase.Clear, length, text.Length, call);
             }
 
             Aiv2Native.PostText(view, text);
-            return WaitForText(text, Remaining(elapsed, timeoutMs, totalTimeoutMs));
+
+            string last;
+            if (!WaitForText(text, call, stallTimeoutMs, budgetMs, out last))
+            {
+                return Failed(SetTextPhase.Fill, last == null ? -1 : last.Length, text.Length, call);
+            }
+
+            return new SetTextResult
+            {
+                Ok = true,
+                Phase = SetTextPhase.Fill,
+                CurrentLength = text.Length,
+                TargetLength = text.Length,
+                ElapsedMs = (int)call.ElapsedMilliseconds,
+            };
         }
 
-        /// <summary>1回ぶんの上限と締切までの残りの、短い方。</summary>
-        static int Remaining(Stopwatch elapsed, int timeoutMs, int totalTimeoutMs)
+        static SetTextResult Failed(SetTextPhase phase, int currentLength, int targetLength,
+            Stopwatch call)
         {
-            return Math.Min(timeoutMs, totalTimeoutMs - (int)elapsed.ElapsedMilliseconds);
+            return new SetTextResult
+            {
+                Ok = false,
+                Phase = phase,
+                CurrentLength = currentLength,
+                TargetLength = targetLength,
+                ElapsedMs = (int)call.ElapsedMilliseconds,
+            };
         }
 
         /// <summary>
@@ -447,15 +648,34 @@ namespace PotatoVoiceHub
 
         const int FocusSettleMs = 100;
 
-        bool WaitForText(string expected, int timeoutMs)
+        /// <summary>
+        /// 入力欄が期待どおりになるまで待つ。
+        /// 打ち切りは経過時間ではなく「変化が止まったか」で決める。所要時間は文字数に
+        /// 比例するので、固定の予算で切ると長いというだけで失敗してしまう。
+        /// </summary>
+        /// <param name="last">打ち切った時点の内容。ログ用。</param>
+        bool WaitForText(string expected, Stopwatch call, int stallTimeoutMs, int budgetMs,
+            out string last)
         {
-            var sw = Stopwatch.StartNew();
+            var stall = Stopwatch.StartNew();
+            string previous = null;
+            bool seen = false;
+
             while (true)
             {
-                var current = GetText();
-                if (current != null && current == expected) return true;
-                if (sw.ElapsedMilliseconds >= timeoutMs) return false;
-                Thread.Sleep(20);
+                last = GetText();
+                if (last != null && last == expected) return true;
+
+                if (!seen || last != previous)
+                {
+                    previous = last;
+                    seen = true;
+                    stall.Restart();
+                }
+                else if (stall.ElapsedMilliseconds >= stallTimeoutMs) return false;
+
+                if (call.ElapsedMilliseconds >= budgetMs) return false;
+                Thread.Sleep(PollIntervalMs);
             }
         }
 
@@ -673,10 +893,15 @@ namespace PotatoVoiceHub
         /// 途中で抜けても、入力欄に半端な文が残るだけでEditorは壊れない。
         /// 位置を動かしていないので、次の要求はそのまま処理できる。
         /// </summary>
-        public PlayAllResult PlayAllSentences(string text, int textTimeoutMs, int extraKeys,
-            int startTimeoutMs, int playTimeoutMs, int totalTimeoutMs)
+        /// <param name="textResult">
+        /// 反映に失敗した文の詳細。TextFailedのときだけ意味がある。
+        /// 失敗の切り分けにはこれが要るので、戻り値だけでは足りない。
+        /// </param>
+        public PlayAllResult PlayAllSentences(string text, int textStallTimeoutMs, int extraKeys,
+            int startTimeoutMs, int playTimeoutMs, int totalTimeoutMs, out SetTextResult textResult)
         {
             var elapsed = Stopwatch.StartNew();
+            textResult = new SetTextResult { Ok = true };
 
             foreach (var sentence in SplitSentences(text))
             {
@@ -686,8 +911,9 @@ namespace PotatoVoiceHub
                 // 飛ばしても音は変わらない(Editor自身も「本当！」までしか読まない)
                 if (!HasSomethingToSpeak(sentence)) continue;
 
-                // SetTextも締切に掛かればfalseを返すので、StartPlayと同じく理由を見分ける
-                if (!SetText(sentence, elapsed, textTimeoutMs, totalTimeoutMs, extraKeys))
+                // SetTextも締切に掛かれば失敗を返すので、StartPlayと同じく理由を見分ける
+                textResult = SetText(sentence, elapsed, textStallTimeoutMs, totalTimeoutMs, extraKeys);
+                if (!textResult.Ok)
                 {
                     return totalTimeoutMs - (int)elapsed.ElapsedMilliseconds <= 0
                         ? PlayAllResult.Timeout : PlayAllResult.TextFailed;
